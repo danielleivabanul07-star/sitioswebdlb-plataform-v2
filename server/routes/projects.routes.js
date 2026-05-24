@@ -1,7 +1,7 @@
 import express from "express";
 import { randomUUID } from "crypto";
 import { defaultProject } from "../../src/utils/defaultProject.js";
-import users from "../db.js";
+import { readUsers } from "../db.js";
 
 import {
   projects,
@@ -13,6 +13,8 @@ import {
 const router = express.Router();
 
 function findClientByIdOrSlug(value) {
+  const users = readUsers();
+
   return users.find(
     (user) =>
       String(user.id) === String(value) ||
@@ -31,6 +33,8 @@ function getProjectKey(value) {
 }
 
 function createProjectForClient(clientId) {
+  const users = readUsers();
+
   const user = users.find(
     (u) => String(u.id) === String(clientId)
   );
@@ -66,6 +70,8 @@ router.get("/:clientIdOrSlug", (req, res) => {
 });
 
 router.post("/:clientIdOrSlug", (req, res) => {
+  const users = readUsers();
+
   const { clientIdOrSlug } = req.params;
 
   const projectKey = getProjectKey(clientIdOrSlug);

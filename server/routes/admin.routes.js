@@ -1,5 +1,5 @@
 import express from "express";
-import users, { saveUsers } from "../db.js";
+import { readUsers, saveUsers } from "../db.js";
 
 const router = express.Router();
 
@@ -16,7 +16,10 @@ function createSlug(value) {
 // =========================
 
 router.get("/clients", (req, res) => {
+  const users = readUsers();
+
   const clients = users.filter((user) => user.role === "client");
+
   res.json(clients);
 });
 
@@ -25,6 +28,8 @@ router.get("/clients", (req, res) => {
 // =========================
 
 router.post("/clients", (req, res) => {
+  const users = readUsers();
+
   const rawSlug =
     String(req.body.slug || "").trim() ||
     String(req.body.businessName || "sitio").trim();
@@ -55,6 +60,8 @@ router.post("/clients", (req, res) => {
 // =========================
 
 router.patch("/clients/:id", (req, res) => {
+  const users = readUsers();
+
   const id = Number(req.params.id);
 
   const client = users.find((user) => user.id === id);
@@ -88,6 +95,8 @@ router.patch("/clients/:id", (req, res) => {
 // =========================
 
 router.delete("/clients/:id", (req, res) => {
+  const users = readUsers();
+
   const id = Number(req.params.id);
 
   const index = users.findIndex((user) => user.id === id);
