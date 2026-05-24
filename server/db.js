@@ -1,0 +1,17 @@
+import fs from "fs";
+import path from "path";
+
+const filePath = path.join(process.cwd(), "server", "data", "users.json");
+
+export function readUsers() {
+  const data = fs.readFileSync(filePath, "utf-8");
+  return JSON.parse(data);
+}
+
+export function saveUsers(users) {
+  fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
+}
+
+const users = readUsers();
+
+export default users;

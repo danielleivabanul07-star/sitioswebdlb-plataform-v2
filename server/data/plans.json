@@ -1,0 +1,145 @@
+[
+  {
+    "category": "websites",
+    "plans": [
+      {
+        "name": "Basic",
+        "price": 500,
+        "description": "Sitio web profesional básico",
+        "features": [
+          "Página principal profesional",
+          "Sección de servicios",
+          "Sección de contacto",
+          "Botón de WhatsApp",
+          "Integración redes sociales",
+          "Diseño responsive",
+          "Galería básica",
+          "Publicación online"
+        ]
+      },
+      {
+        "name": "Pro",
+        "price": 900,
+        "description": "Sitio web profesional avanzado",
+        "features": [
+          "Hasta 5 páginas",
+          "Formularios avanzados",
+          "Sistema de citas",
+          "Integración de pagos",
+          "SEO básico",
+          "Google Business Profile",
+          "Diseño bilingüe",
+          "Galería profesional",
+          "WhatsApp y mapas"
+        ]
+      },
+      {
+        "name": "Premium",
+        "price": 1200,
+        "description": "Sistema web premium empresarial",
+        "features": [
+          "Páginas ilimitadas",
+          "Automatizaciones",
+          "CRM y email marketing",
+          "Calendario avanzado",
+          "Pagos completos",
+          "SEO avanzado",
+          "Copywriting profesional",
+          "Branding premium",
+          "Configuración redes"
+        ]
+      }
+    ]
+  },
+
+  {
+    "category": "marketing",
+    "plans": [
+      {
+        "name": "Basic",
+        "price": 250,
+        "description": "Marketing básico mensual",
+        "features": [
+          "8 publicaciones",
+          "Diseños básicos",
+          "Facebook e Instagram",
+          "Captions",
+          "Hashtags",
+          "1 promoción",
+          "Optimización básica"
+        ]
+      },
+      {
+        "name": "Medium",
+        "price": 500,
+        "description": "Marketing de crecimiento",
+        "features": [
+          "15 posts",
+          "8 reels",
+          "Facebook Instagram TikTok",
+          "Estrategia mensual",
+          "Diseños promocionales",
+          "Respuesta básica leads",
+          "Optimización perfiles"
+        ]
+      },
+      {
+        "name": "Premium",
+        "price": 1500,
+        "description": "Marketing agresivo premium",
+        "features": [
+          "30 posts",
+          "20+ reels",
+          "Captación avanzada",
+          "Campañas promocionales",
+          "Branding visual",
+          "Diseño de anuncios"
+        ]
+      }
+    ]
+  },
+
+  {
+    "category": "business_cards",
+    "plans": [
+      {
+        "name": "Basic",
+        "price": 60,
+        "description": "Tarjeta básica profesional",
+        "features": [
+          "Diseño frontal",
+          "Logo",
+          "Teléfono",
+          "Email",
+          "1 revisión",
+          "PNG/PDF"
+        ]
+      },
+      {
+        "name": "Medium",
+        "price": 120,
+        "description": "Tarjeta doble cara premium",
+        "features": [
+          "Diseño doble cara",
+          "QR code",
+          "Diseño personalizado",
+          "3 revisiones",
+          "Archivo imprenta"
+        ]
+      },
+      {
+        "name": "Premium",
+        "price": 350,
+        "description": "Tarjeta premium exclusiva",
+        "features": [
+          "Diseño exclusivo",
+          "Mockup realista",
+          "QR completo",
+          "Versiones múltiples",
+          "Prioridad entrega",
+          "Revisiones premium"
+        ]
+      }
+    ]
+  }
+]

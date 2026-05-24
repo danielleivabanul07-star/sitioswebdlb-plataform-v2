@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "email": "admin@sitioswebdlb.com",
+    "password": "admin123",
+    "role": "admin",
+    "businessName": "SitiosWebDLB"
+  }
+]

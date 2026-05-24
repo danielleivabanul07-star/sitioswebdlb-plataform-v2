@@ -1,0 +1,35 @@
+{
+  "name": "sitioswebdlb-pro-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server": "node server/index.js",
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "axios": "^1.16.1",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "file-saver": "latest",
+    "jsonwebtoken": "^9.0.3",
+    "jszip": "latest",
+    "lucide-react": "latest",
+    "multer": "^2.1.1",
+    "openai": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "^7.15.1",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "concurrently": "latest",
+    "nodemon": "^3.1.14"
+  }
+}

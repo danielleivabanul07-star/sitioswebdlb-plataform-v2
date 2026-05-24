@@ -1,0 +1,625 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../services/api";
+import { Preview } from "../components/Preview.jsx";
+import { defaultProject } from "../utils/defaultProject.js";
+
+export default function ClientPanel() {
+  const navigate = useNavigate();
+
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+
+  const [activeSection, setActiveSection] = useState("business");
+  const [project, setProject] = useState(defaultProject);
+
+  const [businessData, setBusinessData] = useState({
+    phone: "",
+    hours: "",
+    facebook: "",
+    instagram: "",
+    tiktok: "",
+    photos: []
+  });
+
+  const [photos, setPhotos] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const visiblePages = useMemo(
+    () => project.pages.filter((page) => page.show),
+    [project.pages]
+  );
+
+  async function loadClientData() {
+    if (!user?.email) return;
+
+    const res = await api.get(`/client/${user.email}`);
+
+    setBusinessData({
+      phone: res.data.phone || "",
+      hours: res.data.hours || "",
+      facebook: res.data.facebook || "",
+      instagram: res.data.instagram || "",
+      tiktok: res.data.tiktok || "",
+      photos: res.data.photos || []
+    });
+
+    setPhotos(res.data.photos || []);
+  }
+
+  async function loadProject(showLoader = false) {
+    if (!user?.id) return;
+
+    try {
+      if (showLoader) {
+        setRefreshing(true);
+      }
+
+      const res = await api.get(`/projects/${user.id}`);
+
+      setProject(res.data);
+
+      setBusinessData((prev) => ({
+        ...prev,
+        phone: res.data.business?.phone || "",
+        hours: res.data.business?.hours || "",
+        facebook: res.data.business?.facebook || "",
+        instagram: res.data.business?.instagram || "",
+        tiktok: res.data.business?.tiktok || ""
+      }));
+
+      if (res.data.gallery) {
+        setPhotos(
+          res.data.gallery.map((photo) => ({
+            id: crypto.randomUUID(),
+            name: photo.title || "Imagen",
+            url: photo.src
+          }))
+        );
+      }
+    } catch (error) {
+      console.log("Error cargando proyecto:", error);
+    } finally {
+      if (showLoader) {
+        setRefreshing(false);
+      }
+    }
+  }
+
+  useEffect(() => {
+    loadClientData();
+    loadProject();
+  }, []);
+
+  // =========================
+  // AUTO SAVE
+  // =========================
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+
+      if (!user?.id) return;
+
+      autoSave();
+
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+
+  }, [businessData, photos]);
+
+  async function autoSave() {
+
+    try {
+
+      setSaving(true);
+
+      const updatedProject = {
+        ...project,
+
+        business: {
+          ...project.business,
+          phone: businessData.phone,
+          hours: businessData.hours,
+          facebook: businessData.facebook,
+          instagram: businessData.instagram,
+          tiktok: businessData.tiktok
+        },
+
+        gallery: photos.map((photo) => ({
+          src: photo.url,
+          title: photo.name,
+          description: ""
+        }))
+      };
+
+      setProject(updatedProject);
+
+      await api.post(`/client/${user.email}`, {
+        ...businessData,
+        photos
+      });
+
+      await api.post(
+        `/projects/${user.id}`,
+        updatedProject
+      );
+
+      setSaveSuccess(true);
+
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 1500);
+
+    } catch (error) {
+
+      console.log(
+        "AutoSave Error:",
+        error
+      );
+
+    } finally {
+
+      setSaving(false);
+    }
+  }
+
+  function handleChange(e) {
+    setBusinessData({
+      ...businessData,
+      [e.target.name]: e.target.value
+    });
+  }
+
+  async function handlePhotoUpload(e) {
+    const files = Array.from(e.target.files);
+
+    const newPhotos = await Promise.all(
+      files.map((file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+
+          reader.onload = () => {
+            resolve({
+              id: crypto.randomUUID(),
+              name: file.name,
+              url: reader.result
+            });
+          };
+
+          reader.readAsDataURL(file);
+        });
+      })
+    );
+
+    setPhotos((prev) => [...prev, ...newPhotos]);
+  }
+
+  function deletePhoto(id) {
+    setPhotos(photos.filter((photo) => photo.id !== id));
+  }
+
+  async function handleSave() {
+    await autoSave();
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  }
+
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      background: "#0f172a",
+      color: "#e5e7eb",
+      display: "flex",
+      fontFamily: "Arial, sans-serif"
+    },
+    sidebar: {
+      width: "260px",
+      background: "#020617",
+      padding: "28px 22px",
+      borderRight: "1px solid #1e293b"
+    },
+    brand: {
+      fontSize: "24px",
+      fontWeight: "800",
+      color: "#facc15",
+      marginBottom: "8px"
+    },
+    sidebarText: {
+      color: "#94a3b8",
+      fontSize: "14px",
+      marginBottom: "30px"
+    },
+    menuItem: {
+      width: "100%",
+      textAlign: "left",
+      padding: "12px 14px",
+      borderRadius: "12px",
+      background: "#1e293b",
+      color: "#e5e7eb",
+      marginBottom: "10px",
+      fontWeight: "700",
+      border: "1px solid #263449",
+      cursor: "pointer"
+    },
+    activeMenuItem: {
+      background: "#facc15",
+      color: "#111827",
+      border: "1px solid #facc15"
+    },
+    logoutButton: {
+      width: "100%",
+      marginTop: "25px",
+      padding: "12px",
+      borderRadius: "12px",
+      border: "none",
+      background: "#dc2626",
+      color: "white",
+      fontWeight: "700",
+      cursor: "pointer"
+    },
+    main: {
+      flex: 1,
+      padding: "35px"
+    },
+    header: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "28px"
+    },
+    title: {
+      fontSize: "32px",
+      margin: 0
+    },
+    subtitle: {
+      color: "#94a3b8",
+      marginTop: "8px"
+    },
+    grid: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1.3fr",
+      gap: "25px"
+    },
+    section: {
+      background: "#111827",
+      border: "1px solid #1f2937",
+      borderRadius: "20px",
+      padding: "24px",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
+    },
+    input: {
+      width: "100%",
+      padding: "14px",
+      borderRadius: "12px",
+      border: "1px solid #334155",
+      background: "#020617",
+      color: "#fff",
+      marginTop: "10px",
+      outline: "none"
+    },
+    saveButton: {
+      marginTop: "25px",
+      padding: "14px 22px",
+      cursor: "pointer",
+      border: "none",
+      borderRadius: "12px",
+      background: "#facc15",
+      color: "#111827",
+      fontWeight: "800"
+    },
+    photoGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
+      gap: "15px",
+      marginTop: "15px"
+    },
+    photoCard: {
+      background: "#020617",
+      border: "1px solid #334155",
+      borderRadius: "14px",
+      padding: "10px"
+    },
+    deleteButton: {
+      marginTop: "10px",
+      width: "100%",
+      background: "#dc2626",
+      color: "#fff",
+      border: "none",
+      padding: "10px",
+      borderRadius: "10px",
+      cursor: "pointer",
+      fontWeight: "700"
+    },
+    previewScrollBox: {
+      marginTop: "20px",
+      height: "720px",
+      overflowY: "auto",
+      overflowX: "hidden",
+      borderRadius: "16px",
+      border: "1px solid #334155",
+      background: "#020617"
+    }
+  };
+
+  function menuStyle(section) {
+    return {
+      ...styles.menuItem,
+      ...(activeSection === section ? styles.activeMenuItem : {})
+    };
+  }
+
+  function renderBusiness() {
+    return (
+      <section style={styles.section}>
+        <h2>Información del negocio</h2>
+
+        <label>Teléfono</label>
+        <input
+          name="phone"
+          value={businessData.phone}
+          onChange={handleChange}
+          style={styles.input}
+        />
+
+        <br />
+        <br />
+
+        <label>Horarios</label>
+        <input
+          name="hours"
+          value={businessData.hours}
+          onChange={handleChange}
+          style={styles.input}
+        />
+
+        <br />
+        <br />
+
+        <label>Facebook</label>
+        <input
+          name="facebook"
+          value={businessData.facebook}
+          onChange={handleChange}
+          style={styles.input}
+        />
+
+        <br />
+        <br />
+
+        <label>Instagram</label>
+        <input
+          name="instagram"
+          value={businessData.instagram}
+          onChange={handleChange}
+          style={styles.input}
+        />
+
+        <br />
+        <br />
+
+        <label>TikTok</label>
+        <input
+          name="tiktok"
+          value={businessData.tiktok}
+          onChange={handleChange}
+          style={styles.input}
+        />
+      </section>
+    );
+  }
+
+  function renderGallery() {
+    return (
+      <section style={styles.section}>
+        <h2>Galería</h2>
+
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handlePhotoUpload}
+          style={styles.input}
+        />
+
+        <div style={styles.photoGrid}>
+          {photos.length ? (
+            photos.map((photo) => (
+              <div key={photo.id} style={styles.photoCard}>
+                <img
+                  src={photo.url}
+                  alt={photo.name}
+                  style={{
+                    width: "100%",
+                    height: "140px",
+                    objectFit: "cover",
+                    borderRadius: "12px",
+                    border: "2px solid #facc15"
+                  }}
+                />
+
+                <p
+                  style={{
+                    marginTop: "8px",
+                    fontSize: "12px",
+                    wordBreak: "break-word"
+                  }}
+                >
+                  {photo.name}
+                </p>
+
+                <button
+                  onClick={() => deletePhoto(photo.id)}
+                  style={styles.deleteButton}
+                >
+                  Eliminar
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No hay fotos agregadas.</p>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  function renderSettings() {
+    return (
+      <section style={styles.section}>
+        <h2>Configuración</h2>
+
+        <p style={{ color: "#94a3b8" }}>
+          Panel de configuración del cliente.
+        </p>
+
+        <div style={{ marginTop: "25px" }}>
+          <p>
+            <strong>Negocio:</strong> {user?.businessName}
+          </p>
+
+          <p>
+            <strong>Email:</strong> {user?.email}
+          </p>
+
+          <p>
+            <strong>Rol:</strong> {user?.role}
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  function renderRealPreview() {
+    return (
+      <section style={styles.section}>
+        <h2>Vista real del sitio</h2>
+
+        <div style={styles.previewScrollBox}>
+          <Preview
+            project={project}
+            visiblePages={visiblePages}
+          />
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div style={styles.page}>
+      <aside style={styles.sidebar}>
+        <div style={styles.brand}>SitiosWebDLB</div>
+
+        <p style={styles.sidebarText}>
+          Panel del cliente
+        </p>
+
+        <button
+          style={menuStyle("business")}
+          onClick={() =>
+            setActiveSection("business")
+          }
+        >
+          👤 Mi negocio
+        </button>
+
+        <button
+          style={menuStyle("gallery")}
+          onClick={() =>
+            setActiveSection("gallery")
+          }
+        >
+          🖼️ Galería
+        </button>
+
+        <button
+          style={menuStyle("settings")}
+          onClick={() =>
+            setActiveSection("settings")
+          }
+        >
+          ⚙️ Configuración
+        </button>
+
+        <button
+          onClick={logout}
+          style={styles.logoutButton}
+        >
+          Cerrar sesión
+        </button>
+      </aside>
+
+      <main style={styles.main}>
+        <div style={styles.header}>
+          <div>
+            <h1 style={styles.title}>
+              Bienvenido
+            </h1>
+
+            <p style={styles.subtitle}>
+              {user?.businessName}
+            </p>
+          </div>
+
+          <div>
+
+            <button
+              onClick={() =>
+                loadProject(true)
+              }
+              style={{
+                ...styles.saveButton,
+                background: "#334155",
+                color: "white",
+                marginRight: "12px"
+              }}
+              disabled={refreshing}
+            >
+              {refreshing
+                ? "Actualizando..."
+                : "🔄 Recargar Vista"}
+            </button>
+
+            <button
+              onClick={handleSave}
+              style={styles.saveButton}
+              disabled={saving}
+            >
+              {saving
+                ? "Guardando..."
+                : saveSuccess
+                ? "Guardado automático"
+                : "Guardar cambios"}
+            </button>
+
+          </div>
+        </div>
+
+        <div style={styles.grid}>
+          {activeSection === "business" &&
+            renderBusiness()}
+
+          {activeSection === "business" &&
+            renderRealPreview()}
+
+          {activeSection === "gallery" &&
+            renderGallery()}
+
+          {activeSection === "gallery" &&
+            renderRealPreview()}
+
+          {activeSection === "settings" &&
+            renderSettings()}
+
+          {activeSection === "settings" &&
+            renderRealPreview()}
+        </div>
+      </main>
+    </div>
+  );
+}
