@@ -1,10 +1,12 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import users from "../db.js";
+import { readUsers } from "../db.js";
 
 const router = express.Router();
 
 router.post("/login", (req, res) => {
+  const users = readUsers();
+
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "").trim();
 
