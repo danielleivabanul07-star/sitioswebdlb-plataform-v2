@@ -1,112 +1,50 @@
 import fs from "fs";
 import path from "path";
 
-const projectsPath = path.join(
-  process.cwd(),
-  "server",
-  "data",
-  "projects.json"
-);
+const dataDir = path.join(process.cwd(), "data");
 
-const clientDataPath = path.join(
-  process.cwd(),
-  "server",
-  "data",
-  "clientData.json"
-);
+const projectsPath = path.join(dataDir, "projects.json");
+const clientDataPath = path.join(dataDir, "clientData.json");
 
-// =========================
-// LEER PROJECTS
-// =========================
+function ensureDataDir() {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+}
 
-function loadProjects() {
-
+function loadJson(filePath) {
   try {
+    ensureDataDir();
 
-    if (!fs.existsSync(projectsPath)) {
-
-      fs.writeFileSync(
-        projectsPath,
-        JSON.stringify({}, null, 2)
-      );
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, JSON.stringify({}, null, 2));
     }
 
-    const data = fs.readFileSync(
-      projectsPath,
-      "utf-8"
-    );
-
+    const data = fs.readFileSync(filePath, "utf-8");
     return JSON.parse(data);
-
-  } catch {
-
+  } catch (err) {
+    console.error("ERROR LOAD JSON:", err);
     return {};
   }
 }
 
-// =========================
-// LEER CLIENT DATA
-// =========================
-
-function loadClientData() {
-
-  try {
-
-    if (
-      !fs.existsSync(clientDataPath)
-    ) {
-
-      fs.writeFileSync(
-        clientDataPath,
-        JSON.stringify({}, null, 2)
-      );
-    }
-
-    const data = fs.readFileSync(
-      clientDataPath,
-      "utf-8"
-    );
-
-    return JSON.parse(data);
-
-  } catch {
-
-    return {};
-  }
-}
-
-// =========================
-
-export const projects =
-  loadProjects();
-
-export const clientData =
-  loadClientData();
-
-// =========================
-// SAVE FUNCTIONS
-// =========================
+export const projects = loadJson(projectsPath);
+export const clientData = loadJson(clientDataPath);
 
 export function saveProjects() {
+  ensureDataDir();
 
   fs.writeFileSync(
     projectsPath,
-    JSON.stringify(
-      projects,
-      null,
-      2
-    )
+    JSON.stringify(projects, null, 2)
   );
 }
 
 export function saveClientData() {
+  ensureDataDir();
 
   fs.writeFileSync(
     clientDataPath,
-    JSON.stringify(
-      clientData,
-      null,
-      2
-    )
+    JSON.stringify(clientData, null, 2)
   );
 }
