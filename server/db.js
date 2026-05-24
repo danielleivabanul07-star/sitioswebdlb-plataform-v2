@@ -1,7 +1,11 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const filePath = path.join(process.cwd(), "data", "users.json");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const filePath = path.join(__dirname, "data", "users.json");
 
 export function readUsers() {
   const data = fs.readFileSync(filePath, "utf-8");
