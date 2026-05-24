@@ -1,3 +1,5 @@
+console.log("AUTH ROUTES CARGADAS");
+
 import express from "express";
 import jwt from "jsonwebtoken";
 import { readUsers } from "../db.js";
