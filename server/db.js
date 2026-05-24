@@ -1,17 +1,75 @@
-import fs from "fs";
-import path from "path";
+import express from "express";
+import jwt from "jsonwebtoken";
+import { readUsers } from "../db.js";
 
-const filePath = path.join(process.cwd(), "server", "data", "users.json");
+const router = express.Router();
 
-export function readUsers() {
-  const data = fs.readFileSync(filePath, "utf-8");
-  return JSON.parse(data);
-}
+router.post("/login", (req, res) => {
+  // LEER USUARIOS ACTUALIZADOS
+  const users = readUsers();
 
-export function saveUsers(users) {
-  fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
-}
+  const email = String(req.body.email || "")
+    .trim()
+    .toLowerCase();
 
-const users = readUsers();
+  const password = String(req.body.password || "")
+    .trim();
 
-export default users;
+  // BUSCAR USUARIO
+  const user = users.find(
+    (u) =>
+      String(u.email).trim().toLowerCase() === email &&
+      String(u.password).trim() === password
+  );
+
+  // SI NO EXISTE
+  if (!user) {
+    return res.status(401).json({
+      error: "Email o contraseña incorrectos"
+    });
+  }
+
+  // VERIFICAR SUSPENSIÓN
+  const userStatus = String(user.status || "")
+    .trim()
+    .toLowerCase();
+
+  if (
+    user.role === "client" &&
+    userStatus === "suspendido"
+  ) {
+    return res.status(403).json({
+      error:
+        "Tu cuenta está suspendida. Contacta con SitiosWebDLB."
+    });
+  }
+
+  // CREAR TOKEN
+  const token = jwt.sign(
+    {
+      id: user.id,
+      role: user.role,
+      email: user.email
+    },
+    process.env.JWT_SECRET || "temporal_secret",
+    {
+      expiresIn: "7d"
+    }
+  );
+
+  // RESPUESTA
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      role: user.role,
+      email: user.email,
+      businessName: user.businessName,
+      status: user.status,
+      plan: user.plan,
+      siteUrl: user.siteUrl
+    }
+  });
+});
+
+export default router;
