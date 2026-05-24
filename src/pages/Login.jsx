@@ -32,8 +32,13 @@ export default function Login() {
 
     } catch (error) {
 
+      console.log("LOGIN ERROR COMPLETO:", error);
+      console.log("RESPUESTA:", error.response);
+      console.log("API URL:", import.meta.env.VITE_API_URL);
+
       const message =
         error.response?.data?.error ||
+        error.message ||
         "Error iniciando sesión";
 
       alert(message);
