@@ -27,7 +27,6 @@ export default function ClientPanel() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const hasLoadedProject = useRef(false);
-  const skipAutoSave = useRef(false);
 
   useEffect(() => {
     function handleResize() {
@@ -52,8 +51,6 @@ export default function ClientPanel() {
       const res = await api.get(`/projects/${user.id}`);
       const loadedProject = res.data || defaultProject;
 
-      skipAutoSave.current = true;
-
       setProject({
         ...loadedProject,
         updatedAt: loadedProject.updatedAt || Date.now()
@@ -77,12 +74,9 @@ export default function ClientPanel() {
       );
 
       hasLoadedProject.current = true;
-
-      setTimeout(() => {
-        skipAutoSave.current = false;
-      }, 500);
     } catch (error) {
       console.log("Error cargando proyecto:", error);
+      alert("Error cargando proyecto");
     } finally {
       if (showLoader) setRefreshing(false);
     }
@@ -92,34 +86,13 @@ export default function ClientPanel() {
     loadProject();
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!saving && !refreshing) {
-        loadProject(false);
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [saving, refreshing]);
-
-  useEffect(() => {
-    if (!hasLoadedProject.current) return;
-    if (skipAutoSave.current) return;
-
-    const timeout = setTimeout(() => {
-      if (!user?.id) return;
-      autoSave();
-    }, 2000);
-
-    return () => clearTimeout(timeout);
-  }, [businessData, photos]);
-
-  async function autoSave() {
+  async function saveChanges() {
     if (!hasLoadedProject.current) return;
     if (!user?.id) return;
 
     try {
       setSaving(true);
+      setSaveSuccess(false);
 
       const updatedProject = {
         ...project,
@@ -147,9 +120,10 @@ export default function ClientPanel() {
 
       setTimeout(() => {
         setSaveSuccess(false);
-      }, 1500);
+      }, 1800);
     } catch (error) {
-      console.log("AutoSave Error:", error);
+      console.log("Error guardando cambios:", error);
+      alert("Error guardando cambios");
     } finally {
       setSaving(false);
     }
@@ -189,10 +163,6 @@ export default function ClientPanel() {
 
   function deletePhoto(id) {
     setPhotos((prev) => prev.filter((photo) => photo.id !== id));
-  }
-
-  async function handleSave() {
-    await autoSave();
   }
 
   function logout() {
@@ -592,14 +562,14 @@ export default function ClientPanel() {
             </button>
 
             <button
-              onClick={handleSave}
+              onClick={saveChanges}
               style={styles.saveButton}
               disabled={saving}
             >
               {saving
                 ? "Guardando..."
                 : saveSuccess
-                ? "Guardado automático"
+                ? "Cambios guardados"
                 : "Guardar cambios"}
             </button>
           </div>
