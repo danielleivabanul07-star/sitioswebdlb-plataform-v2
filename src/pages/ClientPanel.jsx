@@ -25,6 +25,16 @@ export default function ClientPanel() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth <= 768);
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const visiblePages = useMemo(
     () => project.pages.filter((page) => page.show),
@@ -92,27 +102,17 @@ export default function ClientPanel() {
     loadProject();
   }, []);
 
-  // =========================
-  // AUTO SAVE
-  // =========================
-
   useEffect(() => {
     const timeout = setTimeout(() => {
-
       if (!user?.id) return;
-
       autoSave();
-
     }, 2000);
 
     return () => clearTimeout(timeout);
-
   }, [businessData, photos]);
 
   async function autoSave() {
-
     try {
-
       setSaving(true);
 
       const updatedProject = {
@@ -141,26 +141,16 @@ export default function ClientPanel() {
         photos
       });
 
-      await api.post(
-        `/projects/${user.id}`,
-        updatedProject
-      );
+      await api.post(`/projects/${user.id}`, updatedProject);
 
       setSaveSuccess(true);
 
       setTimeout(() => {
         setSaveSuccess(false);
       }, 1500);
-
     } catch (error) {
-
-      console.log(
-        "AutoSave Error:",
-        error
-      );
-
+      console.log("AutoSave Error:", error);
     } finally {
-
       setSaving(false);
     }
   }
@@ -216,25 +206,33 @@ export default function ClientPanel() {
       background: "#0f172a",
       color: "#e5e7eb",
       display: "flex",
-      fontFamily: "Arial, sans-serif"
+      flexDirection: isMobile ? "column" : "row",
+      fontFamily: "Arial, sans-serif",
+      overflowX: "hidden"
     },
+
     sidebar: {
-      width: "260px",
+      width: isMobile ? "100%" : "260px",
       background: "#020617",
-      padding: "28px 22px",
-      borderRight: "1px solid #1e293b"
+      padding: isMobile ? "20px" : "28px 22px",
+      borderRight: isMobile ? "none" : "1px solid #1e293b",
+      borderBottom: isMobile ? "1px solid #1e293b" : "none",
+      boxSizing: "border-box"
     },
+
     brand: {
       fontSize: "24px",
       fontWeight: "800",
       color: "#facc15",
       marginBottom: "8px"
     },
+
     sidebarText: {
       color: "#94a3b8",
       fontSize: "14px",
-      marginBottom: "30px"
+      marginBottom: isMobile ? "18px" : "30px"
     },
+
     menuItem: {
       width: "100%",
       textAlign: "left",
@@ -245,16 +243,19 @@ export default function ClientPanel() {
       marginBottom: "10px",
       fontWeight: "700",
       border: "1px solid #263449",
-      cursor: "pointer"
+      cursor: "pointer",
+      boxSizing: "border-box"
     },
+
     activeMenuItem: {
       background: "#facc15",
       color: "#111827",
       border: "1px solid #facc15"
     },
+
     logoutButton: {
       width: "100%",
-      marginTop: "25px",
+      marginTop: isMobile ? "10px" : "25px",
       padding: "12px",
       borderRadius: "12px",
       border: "none",
@@ -263,68 +264,105 @@ export default function ClientPanel() {
       fontWeight: "700",
       cursor: "pointer"
     },
+
     main: {
       flex: 1,
-      padding: "35px"
+      width: "100%",
+      padding: isMobile ? "18px" : "35px",
+      overflowX: "hidden",
+      boxSizing: "border-box"
     },
+
     header: {
       display: "flex",
+      flexDirection: isMobile ? "column" : "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: isMobile ? "stretch" : "center",
+      gap: isMobile ? "16px" : "0",
       marginBottom: "28px"
     },
+
     title: {
-      fontSize: "32px",
+      fontSize: isMobile ? "28px" : "32px",
       margin: 0
     },
+
     subtitle: {
       color: "#94a3b8",
-      marginTop: "8px"
+      marginTop: "8px",
+      wordBreak: "break-word"
     },
+
+    headerActions: {
+      display: "grid",
+      gridTemplateColumns: isMobile ? "1fr" : "auto auto",
+      gap: "12px",
+      width: isMobile ? "100%" : "auto"
+    },
+
     grid: {
       display: "grid",
-      gridTemplateColumns: "1fr 1.3fr",
-      gap: "25px"
+      gridTemplateColumns: isMobile ? "1fr" : "1fr 1.3fr",
+      gap: "25px",
+      width: "100%"
     },
+
     section: {
       background: "#111827",
       border: "1px solid #1f2937",
       borderRadius: "20px",
-      padding: "24px",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
+      padding: isMobile ? "18px" : "24px",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+      overflow: "hidden",
+      width: "100%",
+      maxWidth: "100%",
+      boxSizing: "border-box",
+      marginBottom: isMobile ? "28px" : "0"
     },
+
     input: {
       width: "100%",
+      maxWidth: "100%",
       padding: "14px",
       borderRadius: "12px",
       border: "1px solid #334155",
       background: "#020617",
       color: "#fff",
       marginTop: "10px",
-      outline: "none"
+      outline: "none",
+      boxSizing: "border-box"
     },
+
     saveButton: {
-      marginTop: "25px",
+      width: isMobile ? "100%" : "auto",
+      marginTop: isMobile ? "0" : "25px",
       padding: "14px 22px",
       cursor: "pointer",
       border: "none",
       borderRadius: "12px",
       background: "#facc15",
       color: "#111827",
-      fontWeight: "800"
+      fontWeight: "800",
+      boxSizing: "border-box"
     },
+
     photoGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
+      gridTemplateColumns: isMobile
+        ? "1fr"
+        : "repeat(auto-fit,minmax(140px,1fr))",
       gap: "15px",
       marginTop: "15px"
     },
+
     photoCard: {
       background: "#020617",
       border: "1px solid #334155",
       borderRadius: "14px",
-      padding: "10px"
+      padding: "10px",
+      overflow: "hidden"
     },
+
     deleteButton: {
       marginTop: "10px",
       width: "100%",
@@ -336,14 +374,18 @@ export default function ClientPanel() {
       cursor: "pointer",
       fontWeight: "700"
     },
+
     previewScrollBox: {
       marginTop: "20px",
-      height: "720px",
+      height: isMobile ? "650px" : "720px",
       overflowY: "auto",
       overflowX: "hidden",
       borderRadius: "16px",
       border: "1px solid #334155",
-      background: "#020617"
+      background: "#020617",
+      width: "100%",
+      maxWidth: "100%",
+      boxSizing: "border-box"
     }
   };
 
@@ -436,10 +478,12 @@ export default function ClientPanel() {
                   alt={photo.name}
                   style={{
                     width: "100%",
-                    height: "140px",
+                    height: isMobile ? "190px" : "140px",
                     objectFit: "cover",
                     borderRadius: "12px",
-                    border: "2px solid #facc15"
+                    border: "2px solid #facc15",
+                    boxSizing: "border-box",
+                    display: "block"
                   }}
                 />
 
@@ -483,7 +527,7 @@ export default function ClientPanel() {
             <strong>Negocio:</strong> {user?.businessName}
           </p>
 
-          <p>
+          <p style={{ wordBreak: "break-word" }}>
             <strong>Email:</strong> {user?.email}
           </p>
 
@@ -501,10 +545,7 @@ export default function ClientPanel() {
         <h2>Vista real del sitio</h2>
 
         <div style={styles.previewScrollBox}>
-          <Preview
-            project={project}
-            visiblePages={visiblePages}
-          />
+          <Preview project={project} visiblePages={visiblePages} />
         </div>
       </section>
     );
@@ -515,41 +556,30 @@ export default function ClientPanel() {
       <aside style={styles.sidebar}>
         <div style={styles.brand}>SitiosWebDLB</div>
 
-        <p style={styles.sidebarText}>
-          Panel del cliente
-        </p>
+        <p style={styles.sidebarText}>Panel del cliente</p>
 
         <button
           style={menuStyle("business")}
-          onClick={() =>
-            setActiveSection("business")
-          }
+          onClick={() => setActiveSection("business")}
         >
           👤 Mi negocio
         </button>
 
         <button
           style={menuStyle("gallery")}
-          onClick={() =>
-            setActiveSection("gallery")
-          }
+          onClick={() => setActiveSection("gallery")}
         >
           🖼️ Galería
         </button>
 
         <button
           style={menuStyle("settings")}
-          onClick={() =>
-            setActiveSection("settings")
-          }
+          onClick={() => setActiveSection("settings")}
         >
           ⚙️ Configuración
         </button>
 
-        <button
-          onClick={logout}
-          style={styles.logoutButton}
-        >
+        <button onClick={logout} style={styles.logoutButton}>
           Cerrar sesión
         </button>
       </aside>
@@ -557,32 +587,23 @@ export default function ClientPanel() {
       <main style={styles.main}>
         <div style={styles.header}>
           <div>
-            <h1 style={styles.title}>
-              Bienvenido
-            </h1>
+            <h1 style={styles.title}>Bienvenido</h1>
 
-            <p style={styles.subtitle}>
-              {user?.businessName}
-            </p>
+            <p style={styles.subtitle}>{user?.businessName}</p>
           </div>
 
-          <div>
-
+          <div style={styles.headerActions}>
             <button
-              onClick={() =>
-                loadProject(true)
-              }
+              onClick={() => loadProject(true)}
               style={{
                 ...styles.saveButton,
                 background: "#334155",
                 color: "white",
-                marginRight: "12px"
+                marginRight: isMobile ? "0" : "12px"
               }}
               disabled={refreshing}
             >
-              {refreshing
-                ? "Actualizando..."
-                : "🔄 Recargar Vista"}
+              {refreshing ? "Actualizando..." : "🔄 Recargar Vista"}
             </button>
 
             <button
@@ -596,28 +617,18 @@ export default function ClientPanel() {
                 ? "Guardado automático"
                 : "Guardar cambios"}
             </button>
-
           </div>
         </div>
 
         <div style={styles.grid}>
-          {activeSection === "business" &&
-            renderBusiness()}
+          {activeSection === "business" && renderBusiness()}
+          {activeSection === "business" && renderRealPreview()}
 
-          {activeSection === "business" &&
-            renderRealPreview()}
+          {activeSection === "gallery" && renderGallery()}
+          {activeSection === "gallery" && renderRealPreview()}
 
-          {activeSection === "gallery" &&
-            renderGallery()}
-
-          {activeSection === "gallery" &&
-            renderRealPreview()}
-
-          {activeSection === "settings" &&
-            renderSettings()}
-
-          {activeSection === "settings" &&
-            renderRealPreview()}
+          {activeSection === "settings" && renderSettings()}
+          {activeSection === "settings" && renderRealPreview()}
         </div>
       </main>
     </div>
