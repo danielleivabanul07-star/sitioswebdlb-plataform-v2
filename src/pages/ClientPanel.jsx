@@ -35,40 +35,80 @@ export default function ClientPanel() {
     }
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    return () =>
+      window.removeEventListener(
+        "resize",
+        handleResize
+      );
   }, []);
 
   const visiblePages = useMemo(
-    () => (project?.pages || []).filter((page) => page.show),
+    () =>
+      (
+        project?.pages || []
+      ).filter((page) => page.show),
     [project?.pages]
   );
 
-  async function loadProject(showLoader = false) {
+  async function loadProject(
+    showLoader = false
+  ) {
     if (!user?.id) return;
 
     try {
-      if (showLoader) setRefreshing(true);
+      if (showLoader)
+        setRefreshing(true);
 
-      const res = await api.get(`/projects/${user.id}`);
-      const loadedProject = res.data || defaultProject;
+      const res = await api.get(
+        `/projects/${user.id}`
+      );
+
+      const loadedProject =
+        res.data || defaultProject;
 
       skipAutoSave.current = true;
 
-      setProject(loadedProject);
+      setProject({
+        ...loadedProject,
+        updatedAt:
+          loadedProject.updatedAt ||
+          Date.now()
+      });
 
       setBusinessData({
-        phone: loadedProject.business?.phone || "",
-        hours: loadedProject.business?.hours || "",
-        facebook: loadedProject.business?.facebook || "",
-        instagram: loadedProject.business?.instagram || "",
-        tiktok: loadedProject.business?.tiktok || "",
+        phone:
+          loadedProject.business
+            ?.phone || "",
+
+        hours:
+          loadedProject.business
+            ?.hours || "",
+
+        facebook:
+          loadedProject.business
+            ?.facebook || "",
+
+        instagram:
+          loadedProject.business
+            ?.instagram || "",
+
+        tiktok:
+          loadedProject.business
+            ?.tiktok || "",
+
         photos: []
       });
 
       setPhotos(
-        (loadedProject.gallery || []).map((photo) => ({
+        (
+          loadedProject.gallery ||
+          []
+        ).map((photo) => ({
           id: crypto.randomUUID(),
-          name: photo.title || "Imagen",
+          name:
+            photo.title ||
+            "Imagen",
           url: photo.src
         }))
       );
@@ -79,9 +119,13 @@ export default function ClientPanel() {
         skipAutoSave.current = false;
       }, 500);
     } catch (error) {
-      console.log("Error cargando proyecto:", error);
+      console.log(
+        "Error cargando proyecto:",
+        error
+      );
     } finally {
-      if (showLoader) setRefreshing(false);
+      if (showLoader)
+        setRefreshing(false);
     }
   }
 
@@ -90,19 +134,33 @@ export default function ClientPanel() {
   }, []);
 
   useEffect(() => {
-    if (!hasLoadedProject.current) return;
-    if (skipAutoSave.current) return;
+    if (
+      !hasLoadedProject.current
+    )
+      return;
 
-    const timeout = setTimeout(() => {
-      if (!user?.id) return;
-      autoSave();
-    }, 2000);
+    if (skipAutoSave.current)
+      return;
 
-    return () => clearTimeout(timeout);
+    const timeout = setTimeout(
+      () => {
+        if (!user?.id) return;
+
+        autoSave();
+      },
+      2000
+    );
+
+    return () =>
+      clearTimeout(timeout);
   }, [businessData, photos]);
 
   async function autoSave() {
-    if (!hasLoadedProject.current) return;
+    if (
+      !hasLoadedProject.current
+    )
+      return;
+
     if (!user?.id) return;
 
     try {
@@ -110,24 +168,43 @@ export default function ClientPanel() {
 
       const updatedProject = {
         ...project,
+
+        updatedAt: Date.now(),
+
         business: {
           ...project.business,
-          phone: businessData.phone,
-          hours: businessData.hours,
-          facebook: businessData.facebook,
-          instagram: businessData.instagram,
-          tiktok: businessData.tiktok
+
+          phone:
+            businessData.phone,
+
+          hours:
+            businessData.hours,
+
+          facebook:
+            businessData.facebook,
+
+          instagram:
+            businessData.instagram,
+
+          tiktok:
+            businessData.tiktok
         },
-        gallery: photos.map((photo) => ({
-          src: photo.url,
-          title: photo.name,
-          description: ""
-        }))
+
+        gallery: photos.map(
+          (photo) => ({
+            src: photo.url,
+            title: photo.name,
+            description: ""
+          })
+        )
       };
 
       setProject(updatedProject);
 
-      await api.post(`/projects/${user.id}`, updatedProject);
+      await api.post(
+        `/projects/${user.id}`,
+        updatedProject
+      );
 
       setSaveSuccess(true);
 
@@ -135,7 +212,10 @@ export default function ClientPanel() {
         setSaveSuccess(false);
       }, 1500);
     } catch (error) {
-      console.log("AutoSave Error:", error);
+      console.log(
+        "AutoSave Error:",
+        error
+      );
     } finally {
       setSaving(false);
     }
@@ -144,36 +224,58 @@ export default function ClientPanel() {
   function handleChange(e) {
     setBusinessData({
       ...businessData,
-      [e.target.name]: e.target.value
+      [e.target.name]:
+        e.target.value
     });
   }
 
-  async function handlePhotoUpload(e) {
-    const files = Array.from(e.target.files || []);
-
-    const newPhotos = await Promise.all(
-      files.map((file) => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-
-          reader.onload = () => {
-            resolve({
-              id: crypto.randomUUID(),
-              name: file.name,
-              url: reader.result
-            });
-          };
-
-          reader.readAsDataURL(file);
-        });
-      })
+  async function handlePhotoUpload(
+    e
+  ) {
+    const files = Array.from(
+      e.target.files || []
     );
 
-    setPhotos((prev) => [...prev, ...newPhotos]);
+    const newPhotos =
+      await Promise.all(
+        files.map((file) => {
+          return new Promise(
+            (resolve) => {
+              const reader =
+                new FileReader();
+
+              reader.onload =
+                () => {
+                  resolve({
+                    id: crypto.randomUUID(),
+                    name: file.name,
+                    url: reader.result
+                  });
+                };
+
+              reader.readAsDataURL(
+                file
+              );
+            }
+          );
+        })
+      );
+
+    setPhotos((prev) => [
+      ...prev,
+      ...newPhotos
+    ]);
+
+    e.target.value = "";
   }
 
   function deletePhoto(id) {
-    setPhotos(photos.filter((photo) => photo.id !== id));
+    setPhotos((prev) =>
+      prev.filter(
+        (photo) =>
+          photo.id !== id
+      )
+    );
   }
 
   async function handleSave() {
@@ -181,8 +283,14 @@ export default function ClientPanel() {
   }
 
   function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem(
+      "token"
+    );
+
+    localStorage.removeItem(
+      "user"
+    );
+
     navigate("/login");
   }
 
@@ -192,29 +300,51 @@ export default function ClientPanel() {
       background: "#0f172a",
       color: "#e5e7eb",
       display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      fontFamily: "Arial, sans-serif",
+      flexDirection: isMobile
+        ? "column"
+        : "row",
+      fontFamily:
+        "Arial, sans-serif",
       overflowX: "hidden"
     },
+
     sidebar: {
-      width: isMobile ? "100%" : "260px",
+      width: isMobile
+        ? "100%"
+        : "260px",
+
       background: "#020617",
-      padding: isMobile ? "20px" : "28px 22px",
-      borderRight: isMobile ? "none" : "1px solid #1e293b",
-      borderBottom: isMobile ? "1px solid #1e293b" : "none",
+
+      padding: isMobile
+        ? "20px"
+        : "28px 22px",
+
+      borderRight: isMobile
+        ? "none"
+        : "1px solid #1e293b",
+
+      borderBottom: isMobile
+        ? "1px solid #1e293b"
+        : "none",
+
       boxSizing: "border-box"
     },
+
     brand: {
       fontSize: "24px",
       fontWeight: "800",
       color: "#facc15",
       marginBottom: "8px"
     },
+
     sidebarText: {
       color: "#94a3b8",
       fontSize: "14px",
-      marginBottom: isMobile ? "18px" : "30px"
+      marginBottom: isMobile
+        ? "18px"
+        : "30px"
     },
+
     menuItem: {
       width: "100%",
       textAlign: "left",
@@ -224,18 +354,24 @@ export default function ClientPanel() {
       color: "#e5e7eb",
       marginBottom: "10px",
       fontWeight: "700",
-      border: "1px solid #263449",
+      border:
+        "1px solid #263449",
       cursor: "pointer",
       boxSizing: "border-box"
     },
+
     activeMenuItem: {
       background: "#facc15",
       color: "#111827",
-      border: "1px solid #facc15"
+      border:
+        "1px solid #facc15"
     },
+
     logoutButton: {
       width: "100%",
-      marginTop: isMobile ? "10px" : "25px",
+      marginTop: isMobile
+        ? "10px"
+        : "25px",
       padding: "12px",
       borderRadius: "12px",
       border: "none",
@@ -244,69 +380,108 @@ export default function ClientPanel() {
       fontWeight: "700",
       cursor: "pointer"
     },
+
     main: {
       flex: 1,
       width: "100%",
-      padding: isMobile ? "18px" : "35px",
+      padding: isMobile
+        ? "18px"
+        : "35px",
       overflowX: "hidden",
       boxSizing: "border-box"
     },
+
     header: {
       display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      justifyContent: "space-between",
-      alignItems: isMobile ? "stretch" : "center",
-      gap: isMobile ? "16px" : "0",
+      flexDirection: isMobile
+        ? "column"
+        : "row",
+      justifyContent:
+        "space-between",
+      alignItems: isMobile
+        ? "stretch"
+        : "center",
+      gap: isMobile
+        ? "16px"
+        : "0",
       marginBottom: "28px"
     },
+
     title: {
-      fontSize: isMobile ? "28px" : "32px",
+      fontSize: isMobile
+        ? "28px"
+        : "32px",
       margin: 0
     },
+
     subtitle: {
       color: "#94a3b8",
       marginTop: "8px",
       wordBreak: "break-word"
     },
+
     headerActions: {
       display: "grid",
-      gridTemplateColumns: isMobile ? "1fr" : "auto auto",
+      gridTemplateColumns:
+        isMobile
+          ? "1fr"
+          : "auto auto",
       gap: "12px",
-      width: isMobile ? "100%" : "auto"
+      width: isMobile
+        ? "100%"
+        : "auto"
     },
+
     grid: {
       display: "grid",
-      gridTemplateColumns: isMobile ? "1fr" : "1fr 1.3fr",
+      gridTemplateColumns:
+        isMobile
+          ? "1fr"
+          : "1fr 1.3fr",
       gap: "25px",
       width: "100%"
     },
+
     section: {
       background: "#111827",
-      border: "1px solid #1f2937",
+      border:
+        "1px solid #1f2937",
       borderRadius: "20px",
-      padding: isMobile ? "18px" : "24px",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+      padding: isMobile
+        ? "18px"
+        : "24px",
+      boxShadow:
+        "0 10px 30px rgba(0,0,0,0.25)",
       overflow: "hidden",
       width: "100%",
       maxWidth: "100%",
       boxSizing: "border-box",
-      marginBottom: isMobile ? "28px" : "0"
+      marginBottom: isMobile
+        ? "28px"
+        : "0"
     },
+
     input: {
       width: "100%",
       maxWidth: "100%",
       padding: "14px",
       borderRadius: "12px",
-      border: "1px solid #334155",
+      border:
+        "1px solid #334155",
       background: "#020617",
       color: "#fff",
       marginTop: "10px",
       outline: "none",
       boxSizing: "border-box"
     },
+
     saveButton: {
-      width: isMobile ? "100%" : "auto",
-      marginTop: isMobile ? "0" : "25px",
+      width: isMobile
+        ? "100%"
+        : "auto",
+      marginTop: isMobile
+        ? "0"
+        : "25px",
       padding: "14px 22px",
       cursor: "pointer",
       border: "none",
@@ -316,37 +491,17 @@ export default function ClientPanel() {
       fontWeight: "800",
       boxSizing: "border-box"
     },
-    photoGrid: {
-      display: "grid",
-      gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit,minmax(140px,1fr))",
-      gap: "15px",
-      marginTop: "15px"
-    },
-    photoCard: {
-      background: "#020617",
-      border: "1px solid #334155",
-      borderRadius: "14px",
-      padding: "10px",
-      overflow: "hidden"
-    },
-    deleteButton: {
-      marginTop: "10px",
-      width: "100%",
-      background: "#dc2626",
-      color: "#fff",
-      border: "none",
-      padding: "10px",
-      borderRadius: "10px",
-      cursor: "pointer",
-      fontWeight: "700"
-    },
+
     previewScrollBox: {
       marginTop: "20px",
-      height: isMobile ? "650px" : "720px",
+      height: isMobile
+        ? "650px"
+        : "720px",
       overflowY: "auto",
       overflowX: "hidden",
       borderRadius: "16px",
-      border: "1px solid #334155",
+      border:
+        "1px solid #334155",
       background: "#020617",
       width: "100%",
       maxWidth: "100%",
@@ -357,107 +512,48 @@ export default function ClientPanel() {
   function menuStyle(section) {
     return {
       ...styles.menuItem,
-      ...(activeSection === section ? styles.activeMenuItem : {})
+      ...(activeSection ===
+      section
+        ? styles.activeMenuItem
+        : {})
     };
   }
 
   function renderBusiness() {
     return (
       <section style={styles.section}>
-        <h2>Información del negocio</h2>
+        <h2>
+          Información del negocio
+        </h2>
 
-        <label>Teléfono</label>
-        <input name="phone" value={businessData.phone} onChange={handleChange} style={styles.input} />
+        <label>
+          Teléfono
+        </label>
 
-        <br />
-        <br />
-
-        <label>Horarios</label>
-        <input name="hours" value={businessData.hours} onChange={handleChange} style={styles.input} />
-
-        <br />
-        <br />
-
-        <label>Facebook</label>
-        <input name="facebook" value={businessData.facebook} onChange={handleChange} style={styles.input} />
-
-        <br />
-        <br />
-
-        <label>Instagram</label>
-        <input name="instagram" value={businessData.instagram} onChange={handleChange} style={styles.input} />
+        <input
+          name="phone"
+          value={
+            businessData.phone
+          }
+          onChange={handleChange}
+          style={styles.input}
+        />
 
         <br />
         <br />
 
-        <label>TikTok</label>
-        <input name="tiktok" value={businessData.tiktok} onChange={handleChange} style={styles.input} />
-      </section>
-    );
-  }
+        <label>
+          Horarios
+        </label>
 
-  function renderGallery() {
-    return (
-      <section style={styles.section}>
-        <h2>Galería</h2>
-
-        <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} style={styles.input} />
-
-        <div style={styles.photoGrid}>
-          {photos.length ? (
-            photos.map((photo) => (
-              <div key={photo.id} style={styles.photoCard}>
-                <img
-                  src={photo.url}
-                  alt={photo.name}
-                  style={{
-                    width: "100%",
-                    height: isMobile ? "190px" : "140px",
-                    objectFit: "cover",
-                    borderRadius: "12px",
-                    border: "2px solid #facc15",
-                    boxSizing: "border-box",
-                    display: "block"
-                  }}
-                />
-
-                <p style={{ marginTop: "8px", fontSize: "12px", wordBreak: "break-word" }}>
-                  {photo.name}
-                </p>
-
-                <button onClick={() => deletePhoto(photo.id)} style={styles.deleteButton}>
-                  Eliminar
-                </button>
-              </div>
-            ))
-          ) : (
-            <p>No hay fotos agregadas.</p>
-          )}
-        </div>
-      </section>
-    );
-  }
-
-  function renderSettings() {
-    return (
-      <section style={styles.section}>
-        <h2>Configuración</h2>
-
-        <p style={{ color: "#94a3b8" }}>Panel de configuración del cliente.</p>
-
-        <div style={{ marginTop: "25px" }}>
-          <p>
-            <strong>Negocio:</strong> {user?.businessName}
-          </p>
-
-          <p style={{ wordBreak: "break-word" }}>
-            <strong>Email:</strong> {user?.email}
-          </p>
-
-          <p>
-            <strong>Rol:</strong> {user?.role}
-          </p>
-        </div>
+        <input
+          name="hours"
+          value={
+            businessData.hours
+          }
+          onChange={handleChange}
+          style={styles.input}
+        />
       </section>
     );
   }
@@ -465,10 +561,28 @@ export default function ClientPanel() {
   function renderRealPreview() {
     return (
       <section style={styles.section}>
-        <h2>Vista real del sitio</h2>
+        <h2>
+          Vista real del sitio
+        </h2>
 
-        <div style={styles.previewScrollBox}>
-          <Preview project={project} visiblePages={visiblePages} />
+        <div
+          style={
+            styles.previewScrollBox
+          }
+        >
+          <Preview
+            key={
+              project?.updatedAt ||
+              JSON.stringify(
+                project?.design ||
+                  {}
+              )
+            }
+            project={project}
+            visiblePages={
+              visiblePages
+            }
+          />
         </div>
       </section>
     );
@@ -476,24 +590,40 @@ export default function ClientPanel() {
 
   return (
     <div style={styles.page}>
-      <aside style={styles.sidebar}>
-        <div style={styles.brand}>SitiosWebDLB</div>
+      <aside
+        style={styles.sidebar}
+      >
+        <div style={styles.brand}>
+          SitiosWebDLB
+        </div>
 
-        <p style={styles.sidebarText}>Panel del cliente</p>
+        <p
+          style={
+            styles.sidebarText
+          }
+        >
+          Panel del cliente
+        </p>
 
-        <button style={menuStyle("business")} onClick={() => setActiveSection("business")}>
+        <button
+          style={menuStyle(
+            "business"
+          )}
+          onClick={() =>
+            setActiveSection(
+              "business"
+            )
+          }
+        >
           👤 Mi negocio
         </button>
 
-        <button style={menuStyle("gallery")} onClick={() => setActiveSection("gallery")}>
-          🖼️ Galería
-        </button>
-
-        <button style={menuStyle("settings")} onClick={() => setActiveSection("settings")}>
-          ⚙️ Configuración
-        </button>
-
-        <button onClick={logout} style={styles.logoutButton}>
+        <button
+          onClick={logout}
+          style={
+            styles.logoutButton
+          }
+        >
           Cerrar sesión
         </button>
       </aside>
@@ -501,39 +631,68 @@ export default function ClientPanel() {
       <main style={styles.main}>
         <div style={styles.header}>
           <div>
-            <h1 style={styles.title}>Bienvenido</h1>
-            <p style={styles.subtitle}>{user?.businessName}</p>
+            <h1
+              style={styles.title}
+            >
+              Bienvenido
+            </h1>
+
+            <p
+              style={
+                styles.subtitle
+              }
+            >
+              {
+                user?.businessName
+              }
+            </p>
           </div>
 
-          <div style={styles.headerActions}>
+          <div
+            style={
+              styles.headerActions
+            }
+          >
             <button
-              onClick={() => loadProject(true)}
+              onClick={() =>
+                loadProject(true)
+              }
               style={{
                 ...styles.saveButton,
-                background: "#334155",
-                color: "white",
-                marginRight: isMobile ? "0" : "12px"
+                background:
+                  "#334155",
+                color: "white"
               }}
-              disabled={refreshing}
+              disabled={
+                refreshing
+              }
             >
-              {refreshing ? "Actualizando..." : "🔄 Recargar Vista"}
+              {refreshing
+                ? "Actualizando..."
+                : "🔄 Recargar Vista"}
             </button>
 
-            <button onClick={handleSave} style={styles.saveButton} disabled={saving}>
-              {saving ? "Guardando..." : saveSuccess ? "Guardado automático" : "Guardar cambios"}
+            <button
+              onClick={
+                handleSave
+              }
+              style={
+                styles.saveButton
+              }
+              disabled={saving}
+            >
+              {saving
+                ? "Guardando..."
+                : saveSuccess
+                ? "Guardado automático"
+                : "Guardar cambios"}
             </button>
           </div>
         </div>
 
         <div style={styles.grid}>
-          {activeSection === "business" && renderBusiness()}
-          {activeSection === "business" && renderRealPreview()}
-
-          {activeSection === "gallery" && renderGallery()}
-          {activeSection === "gallery" && renderRealPreview()}
-
-          {activeSection === "settings" && renderSettings()}
-          {activeSection === "settings" && renderRealPreview()}
+          {renderBusiness()}
+          {renderRealPreview()}
         </div>
       </main>
     </div>
