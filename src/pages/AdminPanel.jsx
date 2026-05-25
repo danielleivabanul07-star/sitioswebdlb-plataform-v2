@@ -11,6 +11,7 @@ export default function AdminPanel() {
   const [clients, setClients] = useState([]);
   const [loadingRefresh, setLoadingRefresh] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const [newClient, setNewClient] = useState({
     businessName: "",
@@ -22,6 +23,15 @@ export default function AdminPanel() {
     siteUrl: "",
     slug: ""
   });
+
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth <= 768);
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const stats = useMemo(() => {
     const basicCount = clients.filter((c) => c.plan === "Basic").length;
@@ -195,14 +205,17 @@ ${getFullPublicSiteUrl(client)}`;
       background: "#0f172a",
       color: "#e5e7eb",
       display: "flex",
-      fontFamily: "Arial, sans-serif"
+      flexDirection: isMobile ? "column" : "row",
+      fontFamily: "Arial, sans-serif",
+      overflowX: "hidden"
     },
 
     sidebar: {
-      width: "260px",
+      width: isMobile ? "100%" : "260px",
       background: "#020617",
-      padding: "28px 22px",
-      borderRight: "1px solid #1e293b"
+      padding: isMobile ? "20px" : "28px 22px",
+      borderRight: isMobile ? "none" : "1px solid #1e293b",
+      borderBottom: isMobile ? "1px solid #1e293b" : "none"
     },
 
     brand: {
@@ -215,7 +228,7 @@ ${getFullPublicSiteUrl(client)}`;
     sidebarText: {
       color: "#94a3b8",
       fontSize: "14px",
-      marginBottom: "30px"
+      marginBottom: isMobile ? "18px" : "30px"
     },
 
     sidebarItem: {
@@ -239,7 +252,7 @@ ${getFullPublicSiteUrl(client)}`;
 
     sidebarButton: {
       width: "100%",
-      marginTop: "25px",
+      marginTop: isMobile ? "10px" : "25px",
       padding: "12px",
       borderRadius: "12px",
       border: "none",
@@ -251,18 +264,22 @@ ${getFullPublicSiteUrl(client)}`;
 
     main: {
       flex: 1,
-      padding: "35px"
+      width: "100%",
+      padding: isMobile ? "18px" : "35px",
+      overflowX: "hidden"
     },
 
     header: {
       display: "flex",
+      flexDirection: isMobile ? "column" : "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: isMobile ? "stretch" : "center",
+      gap: isMobile ? "16px" : "0",
       marginBottom: "28px"
     },
 
     title: {
-      fontSize: "32px",
+      fontSize: isMobile ? "28px" : "32px",
       margin: 0
     },
 
@@ -273,7 +290,9 @@ ${getFullPublicSiteUrl(client)}`;
 
     statsGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+      gridTemplateColumns: isMobile
+        ? "1fr"
+        : "repeat(auto-fit, minmax(180px, 1fr))",
       gap: "18px",
       marginBottom: "30px"
     },
@@ -297,25 +316,32 @@ ${getFullPublicSiteUrl(client)}`;
       background: "#111827",
       border: "1px solid #1f2937",
       borderRadius: "20px",
-      padding: "24px",
+      padding: isMobile ? "18px" : "24px",
       marginBottom: "28px",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
+      boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+      overflow: "hidden"
     },
 
     formGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+      gridTemplateColumns: isMobile
+        ? "1fr"
+        : "repeat(auto-fit, minmax(220px, 1fr))",
       gap: "14px"
     },
 
     input: {
       width: "100%",
+      maxWidth: "100%",
       padding: "12px",
       borderRadius: "12px",
       border: "1px solid #334155",
       background: "#020617",
       color: "#e5e7eb",
-      outline: "none"
+      outline: "none",
+      boxSizing: "border-box",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
     },
 
     select: {
@@ -324,10 +350,12 @@ ${getFullPublicSiteUrl(client)}`;
       borderRadius: "10px",
       border: "1px solid #334155",
       background: "#020617",
-      color: "#e5e7eb"
+      color: "#e5e7eb",
+      boxSizing: "border-box"
     },
 
     primaryButton: {
+      width: isMobile ? "100%" : "auto",
       padding: "12px 18px",
       borderRadius: "12px",
       border: "none",
@@ -339,7 +367,9 @@ ${getFullPublicSiteUrl(client)}`;
 
     clientGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+      gridTemplateColumns: isMobile
+        ? "1fr"
+        : "repeat(auto-fit, minmax(320px, 1fr))",
       gap: "18px"
     },
 
@@ -347,7 +377,8 @@ ${getFullPublicSiteUrl(client)}`;
       background: "#020617",
       border: "1px solid #1e293b",
       borderRadius: "18px",
-      padding: "20px"
+      padding: isMobile ? "16px" : "20px",
+      overflow: "hidden"
     },
 
     badge: {
@@ -360,14 +391,17 @@ ${getFullPublicSiteUrl(client)}`;
     },
 
     actions: {
-      display: "flex",
+      display: "grid",
+      gridTemplateColumns: isMobile
+        ? "1fr"
+        : "repeat(auto-fit, minmax(130px, 1fr))",
       gap: "10px",
-      flexWrap: "wrap",
       marginTop: "16px"
     },
 
     darkButton: {
-      padding: "10px 12px",
+      width: "100%",
+      padding: "11px 12px",
       borderRadius: "10px",
       border: "1px solid #334155",
       background: "#1e293b",
@@ -377,13 +411,27 @@ ${getFullPublicSiteUrl(client)}`;
     },
 
     deleteButton: {
-      padding: "10px 12px",
+      width: "100%",
+      padding: "11px 12px",
       borderRadius: "10px",
       border: "none",
       background: "#dc2626",
       color: "white",
       fontWeight: "700",
       cursor: "pointer"
+    },
+
+    linkInput: {
+      width: "100%",
+      maxWidth: "100%",
+      padding: "12px",
+      borderRadius: "12px",
+      border: "1px solid #334155",
+      background: "#020617",
+      color: "#e5e7eb",
+      outline: "none",
+      boxSizing: "border-box",
+      fontSize: isMobile ? "13px" : "14px"
     }
   };
 
@@ -580,7 +628,7 @@ ${getFullPublicSiteUrl(client)}`;
                 </p>
 
                 <input
-                  style={styles.input}
+                  style={styles.linkInput}
                   readOnly
                   value={getFullPublicSiteUrl(client)}
                 />
@@ -590,7 +638,7 @@ ${getFullPublicSiteUrl(client)}`;
                 </p>
 
                 <input
-                  style={styles.input}
+                  style={styles.linkInput}
                   readOnly
                   value={getClientLoginUrl()}
                 />
@@ -626,6 +674,7 @@ ${getFullPublicSiteUrl(client)}`;
                     href={getFullPublicSiteUrl(client)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    style={{ textDecoration: "none" }}
                   >
                     <button style={styles.darkButton}>
                       🌐 Abrir sitio
