@@ -9,6 +9,8 @@ export default function AdminPanel() {
 
   const [activeSection, setActiveSection] = useState("dashboard");
   const [clients, setClients] = useState([]);
+  const [clientSearch, setClientSearch] = useState("");
+  const [tempPasswords, setTempPasswords] = useState({});
   const [loadingRefresh, setLoadingRefresh] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -56,6 +58,23 @@ export default function AdminPanel() {
       revenue: estimatedRevenue
     };
   }, [clients]);
+
+  const filteredClients = useMemo(() => {
+    const term = clientSearch.trim().toLowerCase();
+
+    if (!term) return clients;
+
+    return clients.filter((client) => {
+      return (
+        String(client.businessName || "").toLowerCase().includes(term) ||
+        String(client.email || "").toLowerCase().includes(term) ||
+        String(client.phone || "").toLowerCase().includes(term) ||
+        String(client.slug || "").toLowerCase().includes(term) ||
+        String(client.plan || "").toLowerCase().includes(term) ||
+        String(client.status || "").toLowerCase().includes(term)
+      );
+    });
+  }, [clients, clientSearch]);
 
   async function loadClients(showLoader = false) {
     try {
@@ -125,6 +144,31 @@ export default function AdminPanel() {
     }
   }
 
+  async function changeClientPassword(client) {
+    const newPassword = window.prompt(
+      `Nueva contraseña para ${client.businessName || client.email}:`
+    );
+
+    if (!newPassword || !newPassword.trim()) return;
+
+    try {
+      await api.patch(`/admin/clients/${client.id}`, {
+        password: newPassword.trim()
+      });
+
+      setTempPasswords((prev) => ({
+        ...prev,
+        [client.id]: newPassword.trim()
+      }));
+
+      alert("Contraseña actualizada correctamente");
+      loadClients();
+    } catch (error) {
+      console.log("Error cambiando contraseña:", error);
+      alert("Error cambiando contraseña");
+    }
+  }
+
   async function deleteClient(id) {
     const confirmDelete = window.confirm(
       "¿Seguro que quieres eliminar este cliente?"
@@ -173,6 +217,9 @@ export default function AdminPanel() {
   }
 
   async function copyClientAccess(client) {
+    const visiblePassword =
+      tempPasswords[client.id] || "Contraseña no visible. Usa Cambiar contraseña.";
+
     const accessText = `🔐 Panel cliente:
 ${getClientLoginUrl()}
 
@@ -180,7 +227,7 @@ ${getClientLoginUrl()}
 ${client.email}
 
 🔑 Contraseña:
-${client.password}
+${visiblePassword}
 
 🌐 Sitio web:
 ${getFullPublicSiteUrl(client)}`;
@@ -209,7 +256,6 @@ ${getFullPublicSiteUrl(client)}`;
       fontFamily: "Arial, sans-serif",
       overflowX: "hidden"
     },
-
     sidebar: {
       width: isMobile ? "100%" : "260px",
       background: "rgba(2,6,23,0.92)",
@@ -218,20 +264,17 @@ ${getFullPublicSiteUrl(client)}`;
       borderBottom: isMobile ? "1px solid #1e293b" : "none",
       boxSizing: "border-box"
     },
-
     brand: {
       fontSize: "24px",
       fontWeight: "800",
       color: "#facc15",
       marginBottom: "8px"
     },
-
     sidebarText: {
       color: "#94a3b8",
       fontSize: "14px",
       marginBottom: isMobile ? "18px" : "30px"
     },
-
     sidebarItem: {
       width: "100%",
       textAlign: "left",
@@ -245,13 +288,11 @@ ${getFullPublicSiteUrl(client)}`;
       cursor: "pointer",
       boxSizing: "border-box"
     },
-
     sidebarItemActive: {
       background: "#facc15",
       color: "#111827",
       border: "1px solid #facc15"
     },
-
     sidebarButton: {
       width: "100%",
       marginTop: isMobile ? "10px" : "25px",
@@ -263,7 +304,6 @@ ${getFullPublicSiteUrl(client)}`;
       fontWeight: "700",
       cursor: "pointer"
     },
-
     main: {
       flex: 1,
       width: "100%",
@@ -271,7 +311,6 @@ ${getFullPublicSiteUrl(client)}`;
       overflowX: "hidden",
       boxSizing: "border-box"
     },
-
     header: {
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
@@ -280,17 +319,14 @@ ${getFullPublicSiteUrl(client)}`;
       gap: isMobile ? "16px" : "0",
       marginBottom: "28px"
     },
-
     title: {
       fontSize: isMobile ? "28px" : "32px",
       margin: 0
     },
-
     subtitle: {
       color: "#94a3b8",
       marginTop: "8px"
     },
-
     statsGrid: {
       display: "grid",
       gridTemplateColumns: isMobile
@@ -299,7 +335,6 @@ ${getFullPublicSiteUrl(client)}`;
       gap: "18px",
       marginBottom: "30px"
     },
-
     statCard: {
       background: "rgba(15,23,42,0.82)",
       border: "1px solid #1f2937",
@@ -308,14 +343,12 @@ ${getFullPublicSiteUrl(client)}`;
       boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
       backdropFilter: "blur(10px)"
     },
-
     statNumber: {
       fontSize: "34px",
       fontWeight: "800",
       color: "#facc15",
       marginTop: "8px"
     },
-
     section: {
       background: "rgba(15,23,42,0.82)",
       border: "1px solid #1f2937",
@@ -326,7 +359,6 @@ ${getFullPublicSiteUrl(client)}`;
       overflow: "hidden",
       backdropFilter: "blur(10px)"
     },
-
     formGrid: {
       display: "grid",
       gridTemplateColumns: isMobile
@@ -334,7 +366,6 @@ ${getFullPublicSiteUrl(client)}`;
         : "repeat(auto-fit, minmax(220px, 1fr))",
       gap: "14px"
     },
-
     input: {
       width: "100%",
       maxWidth: "100%",
@@ -348,7 +379,6 @@ ${getFullPublicSiteUrl(client)}`;
       overflow: "hidden",
       textOverflow: "ellipsis"
     },
-
     select: {
       width: "100%",
       padding: "10px",
@@ -358,7 +388,6 @@ ${getFullPublicSiteUrl(client)}`;
       color: "#e5e7eb",
       boxSizing: "border-box"
     },
-
     primaryButton: {
       width: isMobile ? "100%" : "auto",
       padding: "12px 18px",
@@ -369,7 +398,6 @@ ${getFullPublicSiteUrl(client)}`;
       fontWeight: "800",
       cursor: "pointer"
     },
-
     clientGrid: {
       display: "grid",
       gridTemplateColumns: isMobile
@@ -377,7 +405,6 @@ ${getFullPublicSiteUrl(client)}`;
         : "repeat(auto-fit, minmax(320px, 1fr))",
       gap: "18px"
     },
-
     clientCard: {
       background: "rgba(2,6,23,0.92)",
       border: "1px solid #1e293b",
@@ -386,7 +413,6 @@ ${getFullPublicSiteUrl(client)}`;
       overflow: "hidden",
       backdropFilter: "blur(10px)"
     },
-
     badge: {
       display: "inline-block",
       padding: "6px 10px",
@@ -395,7 +421,6 @@ ${getFullPublicSiteUrl(client)}`;
       fontWeight: "800",
       marginBottom: "12px"
     },
-
     actions: {
       display: "grid",
       gridTemplateColumns: isMobile
@@ -404,7 +429,6 @@ ${getFullPublicSiteUrl(client)}`;
       gap: "10px",
       marginTop: "16px"
     },
-
     darkButton: {
       width: "100%",
       padding: "11px 12px",
@@ -415,7 +439,6 @@ ${getFullPublicSiteUrl(client)}`;
       fontWeight: "700",
       cursor: "pointer"
     },
-
     deleteButton: {
       width: "100%",
       padding: "11px 12px",
@@ -426,7 +449,6 @@ ${getFullPublicSiteUrl(client)}`;
       fontWeight: "700",
       cursor: "pointer"
     },
-
     linkInput: {
       width: "100%",
       maxWidth: "100%",
@@ -612,8 +634,18 @@ ${getFullPublicSiteUrl(client)}`;
         <section style={styles.section}>
           <h2>Clientes registrados</h2>
 
+          <input
+            style={{
+              ...styles.input,
+              marginBottom: "18px"
+            }}
+            value={clientSearch}
+            onChange={(e) => setClientSearch(e.target.value)}
+            placeholder="Buscar cliente por negocio, email, teléfono, slug, plan o estado"
+          />
+
           <div style={styles.clientGrid}>
-            {clients.map((client) => (
+            {filteredClients.map((client) => (
               <div key={client.id} style={styles.clientCard}>
                 <StatusBadge status={client.status} />
 
@@ -659,16 +691,6 @@ ${getFullPublicSiteUrl(client)}`;
                   value={client.email || ""}
                 />
 
-                <p style={{ marginTop: "12px" }}>
-                  <strong>🔑 Contraseña:</strong>
-                </p>
-
-                <input
-                  style={styles.input}
-                  readOnly
-                  value={client.password || ""}
-                />
-
                 <p>
                   <strong>Plan:</strong>
                 </p>
@@ -699,6 +721,13 @@ ${getFullPublicSiteUrl(client)}`;
                     style={styles.darkButton}
                   >
                     🔐 Copiar acceso
+                  </button>
+
+                  <button
+                    onClick={() => changeClientPassword(client)}
+                    style={styles.darkButton}
+                  >
+                    🔑 Cambiar contraseña
                   </button>
 
                   <button
