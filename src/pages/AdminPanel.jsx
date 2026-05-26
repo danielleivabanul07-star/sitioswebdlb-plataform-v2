@@ -15,6 +15,15 @@ export default function AdminPanel() {
   const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+  const [editingClient, setEditingClient] = useState(null);
+
+  const [editForm, setEditForm] = useState({
+    businessName: "",
+    email: "",
+    phone: "",
+    password: ""
+  });
+
   const [newClient, setNewClient] = useState({
     businessName: "",
     email: "",
@@ -166,6 +175,59 @@ export default function AdminPanel() {
     } catch (error) {
       console.log("Error cambiando contraseña:", error);
       alert("Error cambiando contraseña");
+    }
+  }
+
+  function openEditClient(client) {
+    setEditingClient(client.id);
+
+    setEditForm({
+      businessName: client.businessName || "",
+      email: client.email || "",
+      phone: client.phone || "",
+      password: ""
+    });
+  }
+
+  function cancelEditClient() {
+    setEditingClient(null);
+
+    setEditForm({
+      businessName: "",
+      email: "",
+      phone: "",
+      password: ""
+    });
+  }
+
+  async function saveClientChanges(clientId) {
+    try {
+      const payload = {
+        businessName: editForm.businessName,
+        email: editForm.email,
+        phone: editForm.phone
+      };
+
+      if (editForm.password.trim()) {
+        payload.password = editForm.password.trim();
+      }
+
+      await api.patch(`/admin/clients/${clientId}`, payload);
+
+      if (editForm.password.trim()) {
+        setTempPasswords((prev) => ({
+          ...prev,
+          [clientId]: editForm.password.trim()
+        }));
+      }
+
+      alert("Cliente actualizado correctamente");
+
+      cancelEditClient();
+      loadClients();
+    } catch (error) {
+      console.log("Error actualizando cliente:", error);
+      alert("Error actualizando cliente");
     }
   }
 
@@ -460,6 +522,25 @@ ${getFullPublicSiteUrl(client)}`;
       outline: "none",
       boxSizing: "border-box",
       fontSize: isMobile ? "13px" : "14px"
+    },
+    searchBox: {
+      display: "grid",
+      gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto",
+      gap: "10px",
+      alignItems: "center",
+      marginBottom: "18px"
+    },
+    editBox: {
+      border: "1px solid #334155",
+      borderRadius: "14px",
+      padding: "14px",
+      background: "rgba(15,23,42,0.9)",
+      marginBottom: "14px"
+    },
+    smallText: {
+      color: "#94a3b8",
+      fontSize: "13px",
+      marginTop: "8px"
     }
   };
 
@@ -574,6 +655,126 @@ ${getFullPublicSiteUrl(client)}`;
     );
   }
 
+  function renderClientSearchSection() {
+    return (
+      <section style={styles.section}>
+        <h2>🔎 Búsqueda de cliente</h2>
+
+        <div style={styles.searchBox}>
+          <input
+            style={styles.input}
+            value={clientSearch}
+            onChange={(e) => setClientSearch(e.target.value)}
+            placeholder="Buscar cliente por negocio, email, teléfono, slug, plan o estado"
+          />
+
+          <button
+            type="button"
+            style={styles.primaryButton}
+            onClick={() => setClientSearch(clientSearch.trim())}
+          >
+            🔎 Buscar
+          </button>
+
+          <button
+            type="button"
+            style={styles.darkButton}
+            onClick={() => setClientSearch("")}
+          >
+            Limpiar
+          </button>
+        </div>
+
+        <p style={styles.smallText}>
+          Resultados encontrados: {filteredClients.length}
+        </p>
+      </section>
+    );
+  }
+
+  function renderEditClientBox(client) {
+    if (editingClient !== client.id) return null;
+
+    return (
+      <div style={styles.editBox}>
+        <h4>👤 Editar usuario y contraseña</h4>
+
+        <div style={styles.formGrid}>
+          <input
+            style={styles.input}
+            value={editForm.businessName}
+            onChange={(e) =>
+              setEditForm({
+                ...editForm,
+                businessName: e.target.value
+              })
+            }
+            placeholder="Nombre del negocio"
+          />
+
+          <input
+            style={styles.input}
+            value={editForm.email}
+            onChange={(e) =>
+              setEditForm({
+                ...editForm,
+                email: e.target.value
+              })
+            }
+            placeholder="Email del cliente"
+          />
+
+          <input
+            style={styles.input}
+            value={editForm.phone}
+            onChange={(e) =>
+              setEditForm({
+                ...editForm,
+                phone: e.target.value
+              })
+            }
+            placeholder="Teléfono del cliente"
+          />
+
+          <input
+            style={styles.input}
+            type="password"
+            value={editForm.password}
+            onChange={(e) =>
+              setEditForm({
+                ...editForm,
+                password: e.target.value
+              })
+            }
+            placeholder="Nueva contraseña"
+          />
+        </div>
+
+        <p style={styles.smallText}>
+          Si dejas la contraseña vacía, se mantiene la contraseña actual.
+        </p>
+
+        <div style={styles.actions}>
+          <button
+            type="button"
+            onClick={() => saveClientChanges(client.id)}
+            style={styles.primaryButton}
+          >
+            💾 Guardar cambios
+          </button>
+
+          <button
+            type="button"
+            onClick={cancelEditClient}
+            style={styles.darkButton}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   function renderClients() {
     return (
       <>
@@ -631,18 +832,10 @@ ${getFullPublicSiteUrl(client)}`;
           </form>
         </section>
 
+        {renderClientSearchSection()}
+
         <section style={styles.section}>
           <h2>Clientes registrados</h2>
-
-          <input
-            style={{
-              ...styles.input,
-              marginBottom: "18px"
-            }}
-            value={clientSearch}
-            onChange={(e) => setClientSearch(e.target.value)}
-            placeholder="Buscar cliente por negocio, email, teléfono, slug, plan o estado"
-          />
 
           <div style={styles.clientGrid}>
             {filteredClients.map((client) => (
@@ -650,6 +843,8 @@ ${getFullPublicSiteUrl(client)}`;
                 <StatusBadge status={client.status} />
 
                 <h3>{client.businessName}</h3>
+
+                {renderEditClientBox(client)}
 
                 <p>
                   <strong>Status:</strong>
@@ -691,6 +886,16 @@ ${getFullPublicSiteUrl(client)}`;
                   value={client.email || ""}
                 />
 
+                <p style={{ marginTop: "12px" }}>
+                  <strong>📱 Teléfono:</strong>
+                </p>
+
+                <input
+                  style={styles.input}
+                  readOnly
+                  value={client.phone || ""}
+                />
+
                 <p>
                   <strong>Plan:</strong>
                 </p>
@@ -724,6 +929,13 @@ ${getFullPublicSiteUrl(client)}`;
                   </button>
 
                   <button
+                    onClick={() => openEditClient(client)}
+                    style={styles.darkButton}
+                  >
+                    👤 Editar usuario
+                  </button>
+
+                  <button
                     onClick={() => changeClientPassword(client)}
                     style={styles.darkButton}
                   >
@@ -734,7 +946,7 @@ ${getFullPublicSiteUrl(client)}`;
                     onClick={() => editClientSite(client.id)}
                     style={styles.darkButton}
                   >
-                    ✏️ Editar
+                    ✏️ Editar sitio
                   </button>
 
                   <button
@@ -747,6 +959,179 @@ ${getFullPublicSiteUrl(client)}`;
               </div>
             ))}
           </div>
+
+          {filteredClients.length === 0 && (
+            <p style={styles.smallText}>
+              No hay clientes que coincidan con esa búsqueda.
+            </p>
+          )}
+        </section>
+      </>
+    );
+  }
+
+  function renderClientSearchOnly() {
+    return (
+      <>
+        {renderClientSearchSection()}
+
+        <section style={styles.section}>
+          <h2>Resultados de búsqueda</h2>
+
+          <div style={styles.clientGrid}>
+            {filteredClients.map((client) => (
+              <div key={client.id} style={styles.clientCard}>
+                <StatusBadge status={client.status} />
+
+                <h3>{client.businessName}</h3>
+
+                <p>
+                  <strong>Email:</strong> {client.email}
+                </p>
+
+                <p>
+                  <strong>Teléfono:</strong> {client.phone}
+                </p>
+
+                <p>
+                  <strong>Slug:</strong> {client.slug}
+                </p>
+
+                <p>
+                  <strong>Plan:</strong> {client.plan}
+                </p>
+
+                <input
+                  style={styles.linkInput}
+                  readOnly
+                  value={getFullPublicSiteUrl(client)}
+                />
+
+                <div style={styles.actions}>
+                  <button
+                    onClick={() => copyClientAccess(client)}
+                    style={styles.darkButton}
+                  >
+                    🔐 Copiar acceso
+                  </button>
+
+                  <button
+                    onClick={() => openEditClient(client)}
+                    style={styles.darkButton}
+                  >
+                    👤 Editar usuario
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveSection("users");
+                      openEditClient(client);
+                    }}
+                    style={styles.primaryButton}
+                  >
+                    🔑 Ir a usuarios
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredClients.length === 0 && (
+            <p style={styles.smallText}>
+              No hay clientes que coincidan con esa búsqueda.
+            </p>
+          )}
+        </section>
+      </>
+    );
+  }
+
+  function renderUsersAndPasswords() {
+    return (
+      <>
+        {renderClientSearchSection()}
+
+        <section style={styles.section}>
+          <h2>👤 Usuarios y contraseñas de clientes</h2>
+
+          <p style={styles.smallText}>
+            Aquí puedes editar el nombre del negocio, email, teléfono y contraseña
+            del cliente. Si no escribes una nueva contraseña, se mantiene la actual.
+          </p>
+
+          <div style={styles.clientGrid}>
+            {filteredClients.map((client) => (
+              <div key={client.id} style={styles.clientCard}>
+                <StatusBadge status={client.status} />
+
+                <h3>{client.businessName}</h3>
+
+                <p>
+                  <strong>Email actual:</strong>
+                </p>
+
+                <input
+                  style={styles.input}
+                  readOnly
+                  value={client.email || ""}
+                />
+
+                <p>
+                  <strong>Teléfono actual:</strong>
+                </p>
+
+                <input
+                  style={styles.input}
+                  readOnly
+                  value={client.phone || ""}
+                />
+
+                <p>
+                  <strong>Panel cliente:</strong>
+                </p>
+
+                <input
+                  style={styles.linkInput}
+                  readOnly
+                  value={getClientLoginUrl()}
+                />
+
+                {renderEditClientBox(client)}
+
+                <div style={styles.actions}>
+                  <button
+                    type="button"
+                    onClick={() => openEditClient(client)}
+                    style={styles.primaryButton}
+                  >
+                    👤 Editar usuario
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => changeClientPassword(client)}
+                    style={styles.darkButton}
+                  >
+                    🔑 Cambiar contraseña rápido
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => copyClientAccess(client)}
+                    style={styles.darkButton}
+                  >
+                    🔐 Copiar acceso
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredClients.length === 0 && (
+            <p style={styles.smallText}>
+              No hay clientes que coincidan con esa búsqueda.
+            </p>
+          )}
         </section>
       </>
     );
@@ -773,6 +1158,20 @@ ${getFullPublicSiteUrl(client)}`;
           👥 Clientes
         </button>
 
+        <button
+          style={sidebarStyle("search")}
+          onClick={() => setActiveSection("search")}
+        >
+          🔎 Buscar cliente
+        </button>
+
+        <button
+          style={sidebarStyle("users")}
+          onClick={() => setActiveSection("users")}
+        >
+          👤 Usuarios y contraseñas
+        </button>
+
         <button onClick={logout} style={styles.sidebarButton}>
           Cerrar sesión
         </button>
@@ -784,7 +1183,7 @@ ${getFullPublicSiteUrl(client)}`;
             <h1 style={styles.title}>Panel Admin</h1>
 
             <p style={styles.subtitle}>
-              Administra clientes y sitios web.
+              Administra clientes, sitios web, usuarios y contraseñas.
             </p>
           </div>
 
@@ -802,6 +1201,8 @@ ${getFullPublicSiteUrl(client)}`;
 
         {activeSection === "dashboard" && renderDashboard()}
         {activeSection === "clients" && renderClients()}
+        {activeSection === "search" && renderClientSearchOnly()}
+        {activeSection === "users" && renderUsersAndPasswords()}
       </main>
     </div>
   );
