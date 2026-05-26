@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fixedCredit } from "../utils/defaultProject.js";
 import { renderField } from "../utils/renderField.jsx";
+import { DraggableElement } from "./DraggableElement.jsx";
 
 export function Preview({ project, setProject, visiblePages = [] }) {
   const pages = project?.pages || [];
@@ -82,50 +83,63 @@ export function Preview({ project, setProject, visiblePages = [] }) {
             }`
           }}
         >
-          <div
-            className="siteLogo"
-            style={{
-              color: design.titleColor || design.accent || "#facc15"
-            }}
+          <DraggableElement
+            id="headerLogo"
+            project={project}
+            setProject={setProject}
           >
-            {business.name || "Nombre del negocio"}
-          </div>
+            <div
+              className="siteLogo"
+              style={{
+                color: design.titleColor || design.accent || "#facc15"
+              }}
+            >
+              {business.name || "Nombre del negocio"}
+            </div>
+          </DraggableElement>
 
-          <div
-            className="siteNav"
-            style={{
-              display: "flex",
-              gap: "10px",
-              alignItems: "center",
-              flexWrap: "wrap"
-            }}
+          <DraggableElement
+            id="headerNav"
+            project={project}
+            setProject={setProject}
+            style={{ display: "block" }}
           >
-            {safeVisiblePages.map((page) => (
-              <button
-                key={page.key}
-                type="button"
-                onClick={() => goToPage(page.key)}
-                style={{
-                  background:
-                    page.key === activePageKey
-                      ? design.accent || "#facc15"
-                      : "transparent",
-                  color:
-                    page.key === activePageKey
-                      ? "#000"
-                      : design.textColor || "#ffffff",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "8px 12px",
-                  borderRadius: "10px",
-                  fontWeight: "600",
-                  transition: ".2s"
-                }}
-              >
-                {page.label}
-              </button>
-            ))}
-          </div>
+            <div
+              className="siteNav"
+              style={{
+                display: "flex",
+                gap: "10px",
+                alignItems: "center",
+                flexWrap: "wrap"
+              }}
+            >
+              {safeVisiblePages.map((page) => (
+                <button
+                  key={page.key}
+                  type="button"
+                  onClick={() => goToPage(page.key)}
+                  style={{
+                    background:
+                      page.key === activePageKey
+                        ? design.accent || "#facc15"
+                        : "transparent",
+                    color:
+                      page.key === activePageKey
+                        ? "#000"
+                        : design.textColor || "#ffffff",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    fontWeight: "600",
+                    transition: ".2s"
+                  }}
+                >
+                  {page.label}
+                </button>
+              ))}
+            </div>
+          </DraggableElement>
         </div>
 
         <PreviewPage
@@ -136,31 +150,38 @@ export function Preview({ project, setProject, visiblePages = [] }) {
           overlay={overlay}
         />
 
-        <footer
-          className="siteFooter"
-          style={{
-            background: design.footerBackground || "rgba(0,0,0,.85)",
-            borderTop: `${design.borderSize ?? 1}px solid ${
-              design.borderColor || "#333"
-            }`
-          }}
+        <DraggableElement
+          id="footer"
+          project={project}
+          setProject={setProject}
+          style={{ display: "block", width: "100%" }}
         >
-          <p>
-            © 2026 {business.name || "Negocio"}. Todos los derechos reservados.
-          </p>
+          <footer
+            className="siteFooter"
+            style={{
+              background: design.footerBackground || "rgba(0,0,0,.85)",
+              borderTop: `${design.borderSize ?? 1}px solid ${
+                design.borderColor || "#333"
+              }`
+            }}
+          >
+            <p>
+              © 2026 {business.name || "Negocio"}. Todos los derechos reservados.
+            </p>
 
-          <div className="developerCredit">
-            {fixedCredit.text}{" "}
-            <a
-              href={fixedCredit.url}
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: design.accent || "#facc15" }}
-            >
-              {fixedCredit.brand}
-            </a>
-          </div>
-        </footer>
+            <div className="developerCredit">
+              {fixedCredit.text}{" "}
+              <a
+                href={fixedCredit.url}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: design.accent || "#facc15" }}
+              >
+                {fixedCredit.brand}
+              </a>
+            </div>
+          </footer>
+        </DraggableElement>
       </div>
     </section>
   );
@@ -176,68 +197,8 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
   };
   const buttons = project?.buttons || {};
   const design = project?.design || {};
-  const positions = design.positions || {};
 
   if (!page) return null;
-
-  function savePosition(key, x, y) {
-    if (!setProject) return;
-
-    setProject((prev) => ({
-      ...prev,
-      updatedAt: Date.now(),
-      design: {
-        ...prev.design,
-        positions: {
-          ...(prev.design?.positions || {}),
-          [key]: {
-            x,
-            y
-          }
-        }
-      }
-    }));
-  }
-
-  function getPosition(key) {
-    return positions[key] || { x: 0, y: 0 };
-  }
-
-  function startDrag(e, key) {
-    if (!setProject) return;
-
-    e.preventDefault();
-
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const current = getPosition(key);
-
-    function onMove(moveEvent) {
-      const nextX = current.x + (moveEvent.clientX - startX);
-      const nextY = current.y + (moveEvent.clientY - startY);
-
-      savePosition(key, nextX, nextY);
-    }
-
-    function onUp() {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    }
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }
-
-  function draggableStyle(key) {
-    const pos = getPosition(key);
-
-    return {
-      transform: `translate(${pos.x}px, ${pos.y}px)`,
-      cursor: setProject ? "grab" : "default",
-      userSelect: "none",
-      display: "inline-block"
-    };
-  }
 
   const heroImage = design.heroBackground || "";
 
@@ -285,9 +246,7 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
 
   const cardStyle = {
     background: design.cardBackground || "rgba(0,0,0,.55)",
-    border: `${design.borderSize ?? 1}px solid ${
-      design.borderColor || "#333"
-    }`,
+    border: `${design.borderSize ?? 1}px solid ${design.borderColor || "#333"}`,
     borderRadius: `${design.borderRadius ?? design.radius ?? 14}px`,
     boxShadow: `0 0 ${design.shadowStrength ?? 20}px rgba(0,0,0,.45)`,
     color: design.textColor || "#ffffff"
@@ -308,41 +267,70 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
       <>
         <section className="siteHero" style={heroBgStyle}>
           <div>
-            <h1
-              onMouseDown={(e) => startDrag(e, "heroTitle")}
-              style={{
-                color: design.titleColor || "#facc15",
-                ...draggableStyle("heroTitle")
-              }}
+            <DraggableElement
+              id="heroTitle"
+              project={project}
+              setProject={setProject}
             >
-              {business.name}
-            </h1>
+              <h1 style={{ color: design.titleColor || "#facc15" }}>
+                {business.name}
+              </h1>
+            </DraggableElement>
 
-            <p
-              onMouseDown={(e) => startDrag(e, "heroText")}
-              style={draggableStyle("heroText")}
+            <DraggableElement
+              id="heroText"
+              project={project}
+              setProject={setProject}
             >
-              {business.hero}
-            </p>
+              <p>{business.hero}</p>
+            </DraggableElement>
           </div>
         </section>
 
         <section className="siteSection" style={pageBgStyle}>
-          <h2 style={{ color: design.titleColor || "#facc15" }}>
-            Sobre Nosotros
-          </h2>
-          <div className="storyCard" style={cardStyle}>
-            {business.about}
-          </div>
+          <DraggableElement
+            id="aboutTitle"
+            project={project}
+            setProject={setProject}
+          >
+            <h2 style={{ color: design.titleColor || "#facc15" }}>
+              Sobre Nosotros
+            </h2>
+          </DraggableElement>
+
+          <DraggableElement
+            id="aboutCard"
+            project={project}
+            setProject={setProject}
+            style={{ display: "block" }}
+          >
+            <div className="storyCard" style={cardStyle}>
+              {business.about}
+            </div>
+          </DraggableElement>
         </section>
 
         <section className="siteSection" style={pageBgStyle}>
-          <h2 style={{ color: design.titleColor || "#facc15" }}>
-            Por qué elegirnos
-          </h2>
-          <div className="storyCard" style={cardStyle}>
-            {business.why}
-          </div>
+          <DraggableElement
+            id="whyTitle"
+            project={project}
+            setProject={setProject}
+          >
+            <h2 style={{ color: design.titleColor || "#facc15" }}>
+              Por qué elegirnos
+            </h2>
+          </DraggableElement>
+
+          <DraggableElement
+            id="whyCard"
+            project={project}
+            setProject={setProject}
+            style={{ display: "block" }}
+          >
+            <div className="storyCard" style={cardStyle}>
+              {business.why}
+            </div>
+          </DraggableElement>
         </section>
       </>
     );
@@ -351,16 +339,30 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
   if (page.key === "services") {
     return (
       <section className="siteSection" style={pageBgStyle}>
-        <h2 style={{ color: design.titleColor || "#facc15" }}>
-          {page.title}
-        </h2>
+        <DraggableElement
+          id="servicesTitle"
+          project={project}
+          setProject={setProject}
+        >
+          <h2 style={{ color: design.titleColor || "#facc15" }}>
+            {page.title}
+          </h2>
+        </DraggableElement>
 
         <div className="cards">
           {services.map((service, i) => (
-            <div className="siteCard" key={i} style={cardStyle}>
-              <h3>{service.title}</h3>
-              <p>{service.description}</p>
-            </div>
+            <DraggableElement
+              key={i}
+              id={`serviceCard-${i}`}
+              project={project}
+              setProject={setProject}
+              style={{ display: "block" }}
+            >
+              <div className="siteCard" style={cardStyle}>
+                <h3>{service.title}</h3>
+                <p>{service.description}</p>
+              </div>
+            </DraggableElement>
           ))}
         </div>
       </section>
@@ -370,23 +372,44 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
   if (page.key === "gallery") {
     return (
       <section className="siteSection" style={pageBgStyle}>
-        <h2 style={{ color: design.titleColor || "#facc15" }}>
-          {page.title}
-        </h2>
+        <DraggableElement
+          id="galleryTitle"
+          project={project}
+          setProject={setProject}
+        >
+          <h2 style={{ color: design.titleColor || "#facc15" }}>
+            {page.title}
+          </h2>
+        </DraggableElement>
 
         <div className="galleryGrid">
           {gallery.length ? (
             gallery.map((img, i) => (
-              <div key={i} style={cardStyle}>
-                <img src={img.src} alt={img.title || "Galería"} />
-                {img.description && <p>{img.description}</p>}
-              </div>
+              <DraggableElement
+                key={i}
+                id={`galleryItem-${i}`}
+                project={project}
+                setProject={setProject}
+                style={{ display: "block" }}
+              >
+                <div style={cardStyle}>
+                  <img src={img.src} alt={img.title || "Galería"} />
+                  {img.description && <p>{img.description}</p>}
+                </div>
+              </DraggableElement>
             ))
           ) : (
-            <div className="siteCard" style={cardStyle}>
-              <h3>Galería próximamente</h3>
-              <p>Agrega fotos desde el panel.</p>
-            </div>
+            <DraggableElement
+              id="galleryEmptyCard"
+              project={project}
+              setProject={setProject}
+              style={{ display: "block" }}
+            >
+              <div className="siteCard" style={cardStyle}>
+                <h3>Galería próximamente</h3>
+                <p>Agrega fotos desde el panel.</p>
+              </div>
+            </DraggableElement>
           )}
         </div>
       </section>
@@ -396,27 +419,40 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
   if (page.key === "appointments") {
     return (
       <section className="siteSection" style={pageBgStyle}>
-        <h2 style={{ color: design.titleColor || "#facc15" }}>
-          {page.title}
-        </h2>
+        <DraggableElement
+          id="appointmentsTitle"
+          project={project}
+          setProject={setProject}
+        >
+          <h2 style={{ color: design.titleColor || "#facc15" }}>
+            {page.title}
+          </h2>
+        </DraggableElement>
 
-        <form className="formBox" style={cardStyle}>
-          <div className="formGrid">
-            {(forms.appointments || []).map((field, i) =>
-              renderField(field, i)
-            )}
-          </div>
+        <DraggableElement
+          id="appointmentsForm"
+          project={project}
+          setProject={setProject}
+          style={{ display: "block" }}
+        >
+          <form className="formBox" style={cardStyle}>
+            <div className="formGrid">
+              {(forms.appointments || []).map((field, i) =>
+                renderField(field, i)
+              )}
+            </div>
 
-          <a
-            className="siteBtn"
-            style={btnStyle}
-            href={`https://wa.me/${business.phone || ""}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Enviar por WhatsApp
-          </a>
-        </form>
+            <a
+              className="siteBtn"
+              style={btnStyle}
+              href={`https://wa.me/${business.phone || ""}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Enviar por WhatsApp
+            </a>
+          </form>
+        </DraggableElement>
       </section>
     );
   }
@@ -424,25 +460,38 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
   if (page.key === "financing") {
     return (
       <section className="siteSection" style={pageBgStyle}>
-        <h2 style={{ color: design.titleColor || "#facc15" }}>
-          {page.title}
-        </h2>
+        <DraggableElement
+          id="financingTitle"
+          project={project}
+          setProject={setProject}
+        >
+          <h2 style={{ color: design.titleColor || "#facc15" }}>
+            {page.title}
+          </h2>
+        </DraggableElement>
 
-        <form className="formBox" style={cardStyle}>
-          <div className="formGrid">
-            {(forms.financing || []).map((field, i) => renderField(field, i))}
-          </div>
+        <DraggableElement
+          id="financingForm"
+          project={project}
+          setProject={setProject}
+          style={{ display: "block" }}
+        >
+          <form className="formBox" style={cardStyle}>
+            <div className="formGrid">
+              {(forms.financing || []).map((field, i) => renderField(field, i))}
+            </div>
 
-          <a
-            className="siteBtn"
-            style={btnStyle}
-            href={`https://wa.me/${business.phone || ""}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Solicitar por WhatsApp
-          </a>
-        </form>
+            <a
+              className="siteBtn"
+              style={btnStyle}
+              href={`https://wa.me/${business.phone || ""}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Solicitar por WhatsApp
+            </a>
+          </form>
+        </DraggableElement>
       </section>
     );
   }
@@ -450,55 +499,75 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
   if (page.key === "contact") {
     return (
       <section className="siteSection" style={pageBgStyle}>
-        <h2 style={{ color: design.titleColor || "#facc15" }}>
-          {page.title}
-        </h2>
+        <DraggableElement
+          id="contactTitle"
+          project={project}
+          setProject={setProject}
+        >
+          <h2 style={{ color: design.titleColor || "#facc15" }}>
+            {page.title}
+          </h2>
+        </DraggableElement>
 
-        <div className="contactButtons">
-          <a
-            className="contactBtn"
-            style={btnStyle}
-            href={`https://wa.me/${business.phone || ""}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            🟢 <span>{buttons.whatsapp || "WhatsApp"}</span>
-          </a>
+        <DraggableElement
+          id="contactButtons"
+          project={project}
+          setProject={setProject}
+          style={{ display: "block" }}
+        >
+          <div className="contactButtons">
+            <a
+              className="contactBtn"
+              style={btnStyle}
+              href={`https://wa.me/${business.phone || ""}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              🟢 <span>{buttons.whatsapp || "WhatsApp"}</span>
+            </a>
 
-          <a
-            className="contactBtn"
-            style={btnStyle}
-            href={`tel:${business.phone || ""}`}
-          >
-            📞 <span>{buttons.call || "Llamar"}</span>
-          </a>
+            <a
+              className="contactBtn"
+              style={btnStyle}
+              href={`tel:${business.phone || ""}`}
+            >
+              📞 <span>{buttons.call || "Llamar"}</span>
+            </a>
 
-          <a
-            className="contactBtn"
-            style={btnStyle}
-            href={`sms:${business.phone || ""}`}
-          >
-            💬 <span>{buttons.sms || "Mensaje"}</span>
-          </a>
+            <a
+              className="contactBtn"
+              style={btnStyle}
+              href={`sms:${business.phone || ""}`}
+            >
+              💬 <span>{buttons.sms || "Mensaje"}</span>
+            </a>
 
-          <a
-            className="contactBtn"
-            style={btnStyle}
-            href={`mailto:${business.email || ""}`}
-          >
-            ✉️ <span>{buttons.email || "Email"}</span>
-          </a>
-        </div>
+            <a
+              className="contactBtn"
+              style={btnStyle}
+              href={`mailto:${business.email || ""}`}
+            >
+              ✉️ <span>{buttons.email || "Email"}</span>
+            </a>
+          </div>
+        </DraggableElement>
 
-        <div className="storyCard" style={cardStyle}>
-          <p>
-            <strong>Dirección:</strong> {business.address}
-          </p>
+        <DraggableElement
+          id="contactInfo"
+          project={project}
+          setProject={setProject}
+          style={{ display: "block" }}
+        >
+          <div className="storyCard" style={cardStyle}>
+            <p>
+              <strong>Dirección:</strong> {business.address}
+            </p>
 
-          <p>
-            <strong>Pagos:</strong> {business.payments}
-          </p>
-        </div>
+            <p>
+              <strong>Pagos:</strong> {business.payments}
+            </p>
+          </div>
+        </DraggableElement>
       </section>
     );
   }
