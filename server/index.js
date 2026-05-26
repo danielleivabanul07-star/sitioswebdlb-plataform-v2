@@ -1,18 +1,15 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import OpenAI from "openai";
-import jwt from "jsonwebtoken";
-
-import { readUsers } from "./db.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import clientRoutes from "./routes/client.routes.js";
 import projectRoutes from "./routes/projects.routes.js";
 import plansRoutes from "./routes/plans.routes.js";
-
-dotenv.config();
 
 const app = express();
 
@@ -31,84 +28,19 @@ app.use(
   })
 );
 
-// =========================
 // TEST SERVER
-// =========================
-
 app.get("/", (req, res) => {
   res.send("Servidor funcionando correctamente 🚀");
 });
 
-// =========================
-// LOGIN DIRECTO
-// =========================
-
-app.post("/api/auth/login", (req, res) => {
-  const users = readUsers();
-
-  const email = String(req.body.email || "").trim().toLowerCase();
-  const password = String(req.body.password || "").trim();
-
-  const user = users.find(
-    (u) =>
-      String(u.email).trim().toLowerCase() === email &&
-      String(u.password).trim() === password
-  );
-
-  if (!user) {
-    return res.status(401).json({
-      error: "Email o contraseña incorrectos"
-    });
-  }
-
-  const userStatus = String(user.status || "").trim().toLowerCase();
-
-  if (user.role === "client" && userStatus === "suspendido") {
-    return res.status(403).json({
-      error: "Tu cuenta está suspendida. Contacta con SitiosWebDLB."
-    });
-  }
-
-  const token = jwt.sign(
-    {
-      id: user.id,
-      role: user.role,
-      email: user.email
-    },
-    process.env.JWT_SECRET || "temporal_secret",
-    {
-      expiresIn: "7d"
-    }
-  );
-
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      role: user.role,
-      email: user.email,
-      businessName: user.businessName,
-      status: user.status,
-      plan: user.plan,
-      siteUrl: user.siteUrl
-    }
-  });
-});
-
-// =========================
 // RUTAS API
-// =========================
-
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/client", clientRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/plans", plansRoutes);
 
-// =========================
 // IA COPY
-// =========================
-
 app.post("/api/ai-copy", async (req, res) => {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -149,10 +81,7 @@ hero, about, why, serviceDescriptions array.
   }
 });
 
-// =========================
 // SEARCH
-// =========================
-
 app.get("/api/search", async (req, res) => {
   try {
     if (!process.env.SERPAPI_KEY) {
@@ -181,10 +110,7 @@ app.get("/api/search", async (req, res) => {
   }
 });
 
-// =========================
 // START SERVER
-// =========================
-
 const port = process.env.PORT || 3001;
 
 app.listen(port, () => {

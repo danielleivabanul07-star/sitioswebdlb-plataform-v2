@@ -48,7 +48,7 @@ export default function ClientPanel() {
     try {
       if (showLoader) setRefreshing(true);
 
-      const res = await api.get(`/projects/${user.id}`);
+      const res = await api.get("/projects/me/project");
       const loadedProject = res.data || defaultProject;
 
       setProject({
@@ -67,7 +67,7 @@ export default function ClientPanel() {
 
       setPhotos(
         (loadedProject.gallery || []).map((photo) => ({
-          id: crypto.randomUUID(),
+          id: photo.id || crypto.randomUUID(),
           name: photo.title || "Imagen",
           url: photo.src
         }))
@@ -97,6 +97,7 @@ export default function ClientPanel() {
       const updatedProject = {
         ...project,
         updatedAt: Date.now(),
+
         business: {
           ...project.business,
           phone: businessData.phone,
@@ -105,7 +106,9 @@ export default function ClientPanel() {
           instagram: businessData.instagram,
           tiktok: businessData.tiktok
         },
+
         gallery: photos.map((photo) => ({
+          id: photo.id || crypto.randomUUID(),
           src: photo.url,
           title: photo.name,
           description: ""
@@ -114,7 +117,7 @@ export default function ClientPanel() {
 
       setProject(updatedProject);
 
-      await api.post(`/projects/${user.id}`, updatedProject);
+      await api.patch("/projects/me/project", updatedProject);
 
       setSaveSuccess(true);
 
@@ -174,32 +177,36 @@ export default function ClientPanel() {
   const styles = {
     page: {
       minHeight: "100vh",
-      background: "#0f172a",
+      background: "transparent",
       color: "#e5e7eb",
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
       fontFamily: "Arial, sans-serif",
       overflowX: "hidden"
     },
+
     sidebar: {
       width: isMobile ? "100%" : "260px",
-      background: "#020617",
+      background: "rgba(2,6,23,0.92)",
       padding: isMobile ? "20px" : "28px 22px",
       borderRight: isMobile ? "none" : "1px solid #1e293b",
       borderBottom: isMobile ? "1px solid #1e293b" : "none",
       boxSizing: "border-box"
     },
+
     brand: {
       fontSize: "24px",
       fontWeight: "800",
       color: "#facc15",
       marginBottom: "8px"
     },
+
     sidebarText: {
       color: "#94a3b8",
       fontSize: "14px",
       marginBottom: isMobile ? "18px" : "30px"
     },
+
     menuItem: {
       width: "100%",
       textAlign: "left",
@@ -213,11 +220,13 @@ export default function ClientPanel() {
       cursor: "pointer",
       boxSizing: "border-box"
     },
+
     activeMenuItem: {
       background: "#facc15",
       color: "#111827",
       border: "1px solid #facc15"
     },
+
     logoutButton: {
       width: "100%",
       marginTop: isMobile ? "10px" : "25px",
@@ -229,6 +238,7 @@ export default function ClientPanel() {
       fontWeight: "700",
       cursor: "pointer"
     },
+
     main: {
       flex: 1,
       width: "100%",
@@ -236,6 +246,7 @@ export default function ClientPanel() {
       overflowX: "hidden",
       boxSizing: "border-box"
     },
+
     header: {
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
@@ -244,29 +255,34 @@ export default function ClientPanel() {
       gap: isMobile ? "16px" : "0",
       marginBottom: "28px"
     },
+
     title: {
       fontSize: isMobile ? "28px" : "32px",
       margin: 0
     },
+
     subtitle: {
       color: "#94a3b8",
       marginTop: "8px",
       wordBreak: "break-word"
     },
+
     headerActions: {
       display: "grid",
       gridTemplateColumns: isMobile ? "1fr" : "auto auto",
       gap: "12px",
       width: isMobile ? "100%" : "auto"
     },
+
     grid: {
       display: "grid",
       gridTemplateColumns: isMobile ? "1fr" : "1fr 1.3fr",
       gap: "25px",
       width: "100%"
     },
+
     section: {
-      background: "#111827",
+      background: "rgba(15,23,42,0.82)",
       border: "1px solid #1f2937",
       borderRadius: "20px",
       padding: isMobile ? "18px" : "24px",
@@ -275,8 +291,10 @@ export default function ClientPanel() {
       width: "100%",
       maxWidth: "100%",
       boxSizing: "border-box",
-      marginBottom: isMobile ? "28px" : "0"
+      marginBottom: isMobile ? "28px" : "0",
+      backdropFilter: "blur(10px)"
     },
+
     input: {
       width: "100%",
       maxWidth: "100%",
@@ -289,6 +307,7 @@ export default function ClientPanel() {
       outline: "none",
       boxSizing: "border-box"
     },
+
     saveButton: {
       width: isMobile ? "100%" : "auto",
       marginTop: isMobile ? "0" : "25px",
@@ -301,6 +320,7 @@ export default function ClientPanel() {
       fontWeight: "800",
       boxSizing: "border-box"
     },
+
     photoGrid: {
       display: "grid",
       gridTemplateColumns: isMobile
@@ -309,6 +329,7 @@ export default function ClientPanel() {
       gap: "15px",
       marginTop: "15px"
     },
+
     photoCard: {
       background: "#020617",
       border: "1px solid #334155",
@@ -316,6 +337,7 @@ export default function ClientPanel() {
       padding: "10px",
       overflow: "hidden"
     },
+
     deleteButton: {
       marginTop: "10px",
       width: "100%",
@@ -327,6 +349,7 @@ export default function ClientPanel() {
       cursor: "pointer",
       fontWeight: "700"
     },
+
     previewScrollBox: {
       marginTop: "20px",
       height: isMobile ? "650px" : "720px",
@@ -334,10 +357,11 @@ export default function ClientPanel() {
       overflowX: "hidden",
       borderRadius: "16px",
       border: "1px solid #334155",
-      background: "#020617",
+      background: "rgba(2,6,23,0.92)",
       width: "100%",
       maxWidth: "100%",
-      boxSizing: "border-box"
+      boxSizing: "border-box",
+      scrollBehavior: "smooth"
     }
   };
 

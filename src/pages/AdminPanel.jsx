@@ -73,6 +73,7 @@ export default function AdminPanel() {
       }
     } catch (error) {
       console.log("Error cargando clientes:", error);
+      alert("Error cargando clientes");
     } finally {
       if (showLoader) setLoadingRefresh(false);
     }
@@ -172,8 +173,7 @@ export default function AdminPanel() {
   }
 
   async function copyClientAccess(client) {
-    const accessText =
-`🔐 Panel cliente:
+    const accessText = `🔐 Panel cliente:
 ${getClientLoginUrl()}
 
 📧 Email:
@@ -202,7 +202,7 @@ ${getFullPublicSiteUrl(client)}`;
   const styles = {
     page: {
       minHeight: "100vh",
-      background: "#0f172a",
+      background: "transparent",
       color: "#e5e7eb",
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
@@ -212,10 +212,11 @@ ${getFullPublicSiteUrl(client)}`;
 
     sidebar: {
       width: isMobile ? "100%" : "260px",
-      background: "#020617",
+      background: "rgba(2,6,23,0.92)",
       padding: isMobile ? "20px" : "28px 22px",
       borderRight: isMobile ? "none" : "1px solid #1e293b",
-      borderBottom: isMobile ? "1px solid #1e293b" : "none"
+      borderBottom: isMobile ? "1px solid #1e293b" : "none",
+      boxSizing: "border-box"
     },
 
     brand: {
@@ -241,7 +242,8 @@ ${getFullPublicSiteUrl(client)}`;
       marginBottom: "10px",
       fontWeight: "700",
       border: "1px solid #263449",
-      cursor: "pointer"
+      cursor: "pointer",
+      boxSizing: "border-box"
     },
 
     sidebarItemActive: {
@@ -266,7 +268,8 @@ ${getFullPublicSiteUrl(client)}`;
       flex: 1,
       width: "100%",
       padding: isMobile ? "18px" : "35px",
-      overflowX: "hidden"
+      overflowX: "hidden",
+      boxSizing: "border-box"
     },
 
     header: {
@@ -298,11 +301,12 @@ ${getFullPublicSiteUrl(client)}`;
     },
 
     statCard: {
-      background: "#111827",
+      background: "rgba(15,23,42,0.82)",
       border: "1px solid #1f2937",
       borderRadius: "18px",
       padding: "22px",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
+      boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+      backdropFilter: "blur(10px)"
     },
 
     statNumber: {
@@ -313,13 +317,14 @@ ${getFullPublicSiteUrl(client)}`;
     },
 
     section: {
-      background: "#111827",
+      background: "rgba(15,23,42,0.82)",
       border: "1px solid #1f2937",
       borderRadius: "20px",
       padding: isMobile ? "18px" : "24px",
       marginBottom: "28px",
       boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-      overflow: "hidden"
+      overflow: "hidden",
+      backdropFilter: "blur(10px)"
     },
 
     formGrid: {
@@ -374,11 +379,12 @@ ${getFullPublicSiteUrl(client)}`;
     },
 
     clientCard: {
-      background: "#020617",
+      background: "rgba(2,6,23,0.92)",
       border: "1px solid #1e293b",
       borderRadius: "18px",
       padding: isMobile ? "16px" : "20px",
-      overflow: "hidden"
+      overflow: "hidden",
+      backdropFilter: "blur(10px)"
     },
 
     badge: {

@@ -21,8 +21,35 @@ body{
 }
 
 body{
-  background:linear-gradient(135deg,#050505,#151515);
+  background:#050505;
   color:#fff;
+  position:relative;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(
+      rgba(0,0,0,.72),
+      rgba(0,0,0,.72)
+    ),
+    url("https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  z-index:-2;
+  pointer-events:none;
+}
+
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.25);
+  z-index:-1;
+  pointer-events:none;
 }
 
 button:hover,
@@ -72,8 +99,8 @@ button:hover,
   border-radius:26px;
   padding:38px;
   box-shadow:0 25px 70px rgba(0,0,0,.45);
- -webkit-backdrop-filter:blur(10px);
-   backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
 }
 
 .loginBrand{
@@ -163,7 +190,9 @@ button:hover,
   font-weight:900;
 }
 
-.statsCard,.panel,.previewWrap{
+.statsCard,
+.panel,
+.previewWrap{
   background:rgba(255,255,255,.06);
   border:1px solid rgba(255,255,255,.14);
   border-radius:26px;
@@ -208,6 +237,8 @@ button:hover,
   top:92px;
   max-height:calc(100vh - 105px);
   overflow:auto;
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
 }
 
 .panel h2{
@@ -241,7 +272,9 @@ label{
   font-size:14px;
 }
 
-input,textarea,select{
+input,
+textarea,
+select{
   width:100%;
   padding:12px;
   border-radius:12px;
@@ -355,7 +388,8 @@ input[type=range]{
   margin-bottom:10px;
 }
 
-.locked,.hint{
+.locked,
+.hint{
   background:rgba(245,196,0,.08);
   border:1px solid rgba(245,196,0,.28);
   color:#ddd;
@@ -389,8 +423,14 @@ input[type=range]{
   min-height:unset;
   border-radius:22px;
   overflow:hidden;
-  background:#080808;
+  background:
+    linear-gradient(
+      rgba(0,0,0,.72),
+      rgba(0,0,0,.72)
+    );
   border:1px solid rgba(255,255,255,.14);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
 }
 
 .siteHeader{
@@ -440,13 +480,15 @@ input[type=range]{
   color:#000 !important;
 }
 
-.siteSection,.siteHero{
+.siteSection,
+.siteHero{
   padding:70px 7%;
-  background:#111;
+  background:transparent;
   color:#fff;
   text-align:center;
   background-size:cover;
   background-position:center;
+  position:relative;
 }
 
 .siteHero{
@@ -454,6 +496,33 @@ input[type=range]{
   display:flex;
   align-items:center;
   justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.siteHero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(245,196,0,.18),
+      transparent 40%
+    );
+  pointer-events:none;
+}
+
+.siteSection::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(
+      rgba(255,255,255,.02),
+      rgba(255,255,255,.01)
+    );
+  pointer-events:none;
 }
 
 .siteHero h1{
@@ -474,7 +543,8 @@ input[type=range]{
   margin-bottom:28px;
 }
 
-.storyCard,.formBox{
+.storyCard,
+.formBox{
   max-width:950px;
   margin:auto;
   background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.05));
@@ -486,6 +556,8 @@ input[type=range]{
   font-size:18px;
   line-height:1.7;
   text-align:left;
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
 }
 
 .cards{
@@ -501,6 +573,8 @@ input[type=range]{
   border-radius:var(--radius);
   padding:24px;
   text-align:left;
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
 }
 
 .siteCard h3{
@@ -635,10 +709,6 @@ input[type=range]{
     margin:7px;
   }
 }
-
-/* =========================
-   MOBILE PRO RESPONSIVE
-========================= */
 
 @media (max-width: 768px) {
   html,

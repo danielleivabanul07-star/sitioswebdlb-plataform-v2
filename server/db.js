@@ -1,17 +1,27 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import { supabase } from "../src/config/db.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export async function readUsers() {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*");
 
-const filePath = path.join(__dirname, "data", "users.json");
+  if (error) {
+    throw error;
+  }
 
-export function readUsers() {
-  const data = fs.readFileSync(filePath, "utf-8");
-  return JSON.parse(data);
+  return data;
 }
 
-export function saveUsers(users) {
-  fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
+export async function saveUser(user) {
+  const { data, error } = await supabase
+    .from("users")
+    .insert([user])
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }

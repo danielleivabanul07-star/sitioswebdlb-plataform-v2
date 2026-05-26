@@ -38,6 +38,7 @@ function BuilderHome() {
       }
 
       const res = await api.get(`/projects/${clientId}`);
+
       const serverProject = res.data || defaultProject;
 
       setProject({
@@ -72,7 +73,14 @@ function BuilderHome() {
 
       setProject(finalProject);
 
-      await api.post(`/projects/${clientId}`, finalProject);
+      // =========================
+      // ADMIN SAVE PROJECT
+      // =========================
+
+      await api.patch(
+        `/projects/admin/${clientId}`,
+        finalProject
+      );
 
       setSaveSuccess(true);
 
@@ -104,6 +112,7 @@ function BuilderHome() {
     setProject((prev) => ({
       ...prev,
       updatedAt: Date.now(),
+
       business: {
         ...prev.business,
         [field]: value
@@ -115,6 +124,7 @@ function BuilderHome() {
     setProject((prev) => ({
       ...prev,
       updatedAt: Date.now(),
+
       design: {
         ...prev.design,
         [field]: value
@@ -131,6 +141,7 @@ function BuilderHome() {
       <header className="appHeader">
         <div>
           <h1>SitiosWebDLB Builder Pro</h1>
+
           <p>Editando cliente #{clientId}</p>
         </div>
 
@@ -145,7 +156,9 @@ function BuilderHome() {
             onClick={() => loadProject(true)}
             disabled={loadingProject}
           >
-            {loadingProject ? "Actualizando..." : "Recargar Proyecto"}
+            {loadingProject
+              ? "Actualizando..."
+              : "Recargar Proyecto"}
           </button>
 
           <button
@@ -159,17 +172,26 @@ function BuilderHome() {
               : "Guardar Proyecto"}
           </button>
 
-          <Link className="brandLink" to={`/site/${clientId}`}>
+          <Link
+            className="brandLink"
+            to={`/site/${clientId}`}
+          >
             Ver sitio público
           </Link>
 
-          <Link className="brandLink" to="/admin">
+          <Link
+            className="brandLink"
+            to="/admin"
+          >
             Volver Admin
           </Link>
         </div>
       </header>
 
-      <main className="workspace" id="builder">
+      <main
+        className="workspace"
+        id="builder"
+      >
         <BuilderPanel
           project={project}
           setProject={setProject}
@@ -180,7 +202,10 @@ function BuilderHome() {
         />
 
         <Preview
-          key={project?.updatedAt || JSON.stringify(project?.design || {})}
+          key={
+            project?.updatedAt ||
+            JSON.stringify(project?.design || {})
+          }
           project={project}
           visiblePages={visiblePages}
         />
@@ -193,16 +218,27 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route
+          path="/"
+          element={<Login />}
+        />
 
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-        <Route path="/site/:clientId" element={<PublicSite />} />
+        <Route
+          path="/site/:clientId"
+          element={<PublicSite />}
+        />
 
         <Route
           path="/admin"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute
+              allowedRoles={["admin"]}
+            >
               <AdminPanel />
             </ProtectedRoute>
           }
@@ -211,7 +247,12 @@ export default function App() {
         <Route
           path="/cliente"
           element={
-            <ProtectedRoute allowedRoles={["admin", "client"]}>
+            <ProtectedRoute
+              allowedRoles={[
+                "admin",
+                "client"
+              ]}
+            >
               <ClientPanel />
             </ProtectedRoute>
           }
@@ -220,7 +261,9 @@ export default function App() {
         <Route
           path="/builder/:clientId"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute
+              allowedRoles={["admin"]}
+            >
               <BuilderHome />
             </ProtectedRoute>
           }

@@ -1,5 +1,6 @@
 import express from "express";
-import { readUsers, saveUsers } from "../db.js";
+import bcrypt from "bcryptjs";
+import { supabase } from "../config/db.js";
 
 const router = express.Router();
 
@@ -11,104 +12,126 @@ function createSlug(value) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-// =========================
-// GET CLIENTS
-// =========================
+router.get("/clients", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("role", "client")
+      .order("created_at", { ascending: false });
 
-router.get("/clients", (req, res) => {
-  const users = readUsers();
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
 
-  const clients = users.filter((user) => user.role === "client");
-
-  res.json(clients);
-});
-
-// =========================
-// CREATE CLIENT
-// =========================
-
-router.post("/clients", (req, res) => {
-  const users = readUsers();
-
-  const rawSlug =
-    String(req.body.slug || "").trim() ||
-    String(req.body.businessName || "sitio").trim();
-
-  const slug = createSlug(rawSlug);
-
-  const newClient = {
-    id: Date.now(),
-    businessName: req.body.businessName,
-    email: req.body.email,
-    phone: req.body.phone,
-    password: req.body.password,
-    role: "client",
-    status: req.body.status || "activo",
-    plan: req.body.plan || "Basic",
-    slug,
-    siteUrl: `/site/${slug}`
-  };
-
-  users.push(newClient);
-  saveUsers(users);
-
-  res.json(newClient);
-});
-
-// =========================
-// UPDATE CLIENT
-// =========================
-
-router.patch("/clients/:id", (req, res) => {
-  const users = readUsers();
-
-  const id = Number(req.params.id);
-
-  const client = users.find((user) => user.id === id);
-
-  if (!client) {
-    return res.status(404).json({
-      message: "Cliente no encontrado"
-    });
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: "Error cargando clientes" });
   }
+});
 
-  Object.assign(client, req.body);
-
-  if (req.body.slug || req.body.businessName) {
+router.post("/clients", async (req, res) => {
+  try {
     const rawSlug =
       String(req.body.slug || "").trim() ||
       String(req.body.businessName || "sitio").trim();
 
     const slug = createSlug(rawSlug);
 
-    client.slug = slug;
-    client.siteUrl = `/site/${slug}`;
+    const passwordHash = await bcrypt.hash(
+      String(req.body.password || "").trim(),
+      10
+    );
+
+    const newClient = {
+      businessName: req.body.businessName,
+      email: String(req.body.email || "").trim().toLowerCase(),
+      phone: req.body.phone,
+      password_hash: passwordHash,
+      role: "client",
+      status: req.body.status || "activo",
+      plan: req.body.plan || "Basic",
+      slug,
+      siteUrl: `/site/${slug}`
+    };
+
+    const { data, error } = await supabase
+      .from("users")
+      .insert([newClient])
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Error creando cliente" });
   }
-
-  saveUsers(users);
-
-  res.json(client);
 });
 
-// =========================
-// DELETE CLIENT
-// =========================
+router.patch("/clients/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updateData = { ...req.body };
 
-router.delete("/clients/:id", (req, res) => {
-  const users = readUsers();
+    if (req.body.password) {
+      updateData.password_hash = await bcrypt.hash(
+        String(req.body.password).trim(),
+        10
+      );
 
-  const id = Number(req.params.id);
+      delete updateData.password;
+    }
 
-  const index = users.findIndex((user) => user.id === id);
+    if (req.body.slug || req.body.businessName) {
+      const rawSlug =
+        String(req.body.slug || "").trim() ||
+        String(req.body.businessName || "sitio").trim();
 
-  if (index !== -1) {
-    users.splice(index, 1);
-    saveUsers(users);
+      const slug = createSlug(rawSlug);
+
+      updateData.slug = slug;
+      updateData.siteUrl = `/site/${slug}`;
+    }
+
+    const { data, error } = await supabase
+      .from("users")
+      .update(updateData)
+      .eq("id", id)
+      .eq("role", "client")
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Error actualizando cliente" });
   }
+});
 
-  res.json({
-    message: "Cliente eliminado"
-  });
+router.delete("/clients/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const { error } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", id)
+      .eq("role", "client");
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: "Cliente eliminado" });
+  } catch (err) {
+    res.status(500).json({ error: "Error eliminando cliente" });
+  }
 });
 
 export default router;
