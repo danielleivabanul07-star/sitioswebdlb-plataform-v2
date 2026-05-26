@@ -39,11 +39,10 @@ export function Preview({ project, visiblePages = [] }) {
             ),
             url(${design.globalBackground})
           `,
-          backgroundSize: "cover",
-          backgroundPosition: `
-            ${design.globalBackgroundPositionX ?? 50}%
-            ${design.globalBackgroundPositionY ?? 50}%
-          `,
+          backgroundSize: `${design.globalBackgroundSize ?? 100}%`,
+          backgroundPosition: `${design.globalBackgroundPositionX ?? 50}% ${
+            design.globalBackgroundPositionY ?? 50
+          }%`,
           backgroundRepeat: "no-repeat",
           backgroundAttachment: "scroll",
           backgroundColor: "#000"
@@ -190,11 +189,10 @@ function PreviewPage({ page, project, backgroundMode, overlay }) {
           ),
           url(${heroImage})
         `,
-        backgroundSize: "cover",
-        backgroundPosition: `
-          ${design.heroBackgroundPositionX ?? 50}%
-          ${design.heroBackgroundPositionY ?? 50}%
-        `,
+        backgroundSize: `${design.heroBackgroundSize ?? 100}%`,
+        backgroundPosition: `${design.heroBackgroundPositionX ?? 50}% ${
+          design.heroBackgroundPositionY ?? 50
+        }%`,
         backgroundRepeat: "no-repeat",
         backgroundColor: "#000"
       }
@@ -212,11 +210,10 @@ function PreviewPage({ page, project, backgroundMode, overlay }) {
             ),
             url(${page.background})
           `,
-          backgroundSize: "cover",
-          backgroundPosition: `
-            ${page.backgroundPositionX || 50}%
-            ${page.backgroundPositionY || 50}%
-          `,
+          backgroundSize: `${page.backgroundSize ?? 100}%`,
+          backgroundPosition: `${page.backgroundPositionX ?? 50}% ${
+            page.backgroundPositionY ?? 50
+          }%`,
           backgroundRepeat: "no-repeat",
           backgroundColor: "#000"
         }
@@ -308,7 +305,6 @@ function PreviewPage({ page, project, backgroundMode, overlay }) {
             gallery.map((img, i) => (
               <div key={i} style={cardStyle}>
                 <img src={img.src} alt={img.title || "Galería"} />
-
                 {img.description && <p>{img.description}</p>}
               </div>
             ))
