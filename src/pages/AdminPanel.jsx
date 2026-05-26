@@ -9,6 +9,7 @@ export default function AdminPanel() {
 
   const [activeSection, setActiveSection] = useState("dashboard");
   const [clients, setClients] = useState([]);
+  const [clientSearch, setClientSearch] = useState("");
   const [loadingRefresh, setLoadingRefresh] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -30,32 +31,87 @@ export default function AdminPanel() {
     }
 
     window.addEventListener("resize", handleResize);
+
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const stats = useMemo(() => {
-    const basicCount = clients.filter((c) => c.plan === "Basic").length;
-
-    const mediumCount = clients.filter(
-      (c) => c.plan === "Medium" || c.plan === "Pro"
+    const basicCount = clients.filter(
+      (c) => c.plan === "Basic"
     ).length;
 
-    const premiumCount = clients.filter((c) => c.plan === "Premium").length;
+    const mediumCount = clients.filter(
+      (c) =>
+        c.plan === "Medium" ||
+        c.plan === "Pro"
+    ).length;
+
+    const premiumCount = clients.filter(
+      (c) => c.plan === "Premium"
+    ).length;
 
     const estimatedRevenue =
-      basicCount * 500 + mediumCount * 900 + premiumCount * 1200;
+      basicCount * 500 +
+      mediumCount * 900 +
+      premiumCount * 1200;
 
     return {
       total: clients.length,
-      active: clients.filter((c) => c.status === "activo").length,
-      pending: clients.filter((c) => c.status === "pendiente").length,
-      suspended: clients.filter((c) => c.status === "suspendido").length,
+
+      active: clients.filter(
+        (c) => c.status === "activo"
+      ).length,
+
+      pending: clients.filter(
+        (c) => c.status === "pendiente"
+      ).length,
+
+      suspended: clients.filter(
+        (c) => c.status === "suspendido"
+      ).length,
+
       basic: basicCount,
       medium: mediumCount,
       premium: premiumCount,
       revenue: estimatedRevenue
     };
   }, [clients]);
+
+  const filteredClients = useMemo(() => {
+    const term = clientSearch
+      .trim()
+      .toLowerCase();
+
+    if (!term) return clients;
+
+    return clients.filter((client) => {
+      return (
+        String(client.businessName || "")
+          .toLowerCase()
+          .includes(term) ||
+
+        String(client.email || "")
+          .toLowerCase()
+          .includes(term) ||
+
+        String(client.phone || "")
+          .toLowerCase()
+          .includes(term) ||
+
+        String(client.slug || "")
+          .toLowerCase()
+          .includes(term) ||
+
+        String(client.plan || "")
+          .toLowerCase()
+          .includes(term) ||
+
+        String(client.status || "")
+          .toLowerCase()
+          .includes(term)
+      );
+    });
+  }, [clients, clientSearch]);
 
   async function loadClients(showLoader = false) {
     try {
@@ -65,17 +121,31 @@ export default function AdminPanel() {
       }
 
       const res = await api.get("/admin/clients");
+
       setClients(res.data);
 
       if (showLoader) {
         setRefreshSuccess(true);
-        setTimeout(() => setRefreshSuccess(false), 2000);
+
+        setTimeout(() => {
+          setRefreshSuccess(false);
+        }, 2000);
       }
+
     } catch (error) {
-      console.log("Error cargando clientes:", error);
+
+      console.log(
+        "Error cargando clientes:",
+        error
+      );
+
       alert("Error cargando clientes");
+
     } finally {
-      if (showLoader) setLoadingRefresh(false);
+
+      if (showLoader) {
+        setLoadingRefresh(false);
+      }
     }
   }
 
@@ -94,7 +164,11 @@ export default function AdminPanel() {
     e.preventDefault();
 
     try {
-      await api.post("/admin/clients", newClient);
+
+      await api.post(
+        "/admin/clients",
+        newClient
+      );
 
       setNewClient({
         businessName: "",
@@ -108,20 +182,69 @@ export default function AdminPanel() {
       });
 
       loadClients();
+
       setActiveSection("clients");
+
     } catch (error) {
-      console.log("Error creando cliente:", error);
+
+      console.log(
+        "Error creando cliente:",
+        error
+      );
+
       alert("Error creando cliente");
     }
   }
 
   async function updateClient(id, updatedData) {
     try {
-      await api.patch(`/admin/clients/${id}`, updatedData);
+
+      await api.patch(
+        `/admin/clients/${id}`,
+        updatedData
+      );
+
       loadClients();
+
     } catch (error) {
-      console.log("Error actualizando cliente:", error);
+
+      console.log(
+        "Error actualizando cliente:",
+        error
+      );
+
       alert("Error actualizando cliente");
+    }
+  }
+
+  async function changeClientPassword(client) {
+    const newPassword = window.prompt(
+      `Nueva contraseña para ${client.businessName || client.email}:`
+    );
+
+    if (!newPassword) return;
+
+    try {
+
+      await api.patch(
+        `/admin/clients/${client.id}`,
+        {
+          password: newPassword
+        }
+      );
+
+      alert("Contraseña actualizada");
+
+      loadClients();
+
+    } catch (error) {
+
+      console.log(
+        "Error cambiando contraseña:",
+        error
+      );
+
+      alert("Error cambiando contraseña");
     }
   }
 
@@ -133,10 +256,20 @@ export default function AdminPanel() {
     if (!confirmDelete) return;
 
     try {
-      await api.delete(`/admin/clients/${id}`);
+
+      await api.delete(
+        `/admin/clients/${id}`
+      );
+
       loadClients();
+
     } catch (error) {
-      console.log("Error eliminando cliente:", error);
+
+      console.log(
+        "Error eliminando cliente:",
+        error
+      );
+
       alert("Error eliminando cliente");
     }
   }
@@ -146,6 +279,7 @@ export default function AdminPanel() {
   }
 
   function getPublicSiteUrl(client) {
+
     if (client.slug) {
       return `/site/${client.slug}`;
     }
@@ -162,33 +296,45 @@ export default function AdminPanel() {
   }
 
   async function copySiteUrl(client) {
-    const fullUrl = getFullPublicSiteUrl(client);
+
+    const fullUrl =
+      getFullPublicSiteUrl(client);
 
     try {
-      await navigator.clipboard.writeText(fullUrl);
+
+      await navigator.clipboard.writeText(
+        fullUrl
+      );
+
       alert("Link público copiado 🔥");
+
     } catch {
+
       alert("Error copiando link");
     }
   }
 
   async function copyClientAccess(client) {
+
     const accessText = `🔐 Panel cliente:
 ${getClientLoginUrl()}
 
 📧 Email:
 ${client.email}
 
-🔑 Contraseña:
-${client.password}
-
 🌐 Sitio web:
 ${getFullPublicSiteUrl(client)}`;
 
     try {
-      await navigator.clipboard.writeText(accessText);
+
+      await navigator.clipboard.writeText(
+        accessText
+      );
+
       alert("Acceso cliente copiado 🔥");
+
     } catch {
+
       alert("Error copiando acceso");
     }
   }
@@ -196,6 +342,7 @@ ${getFullPublicSiteUrl(client)}`;
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     navigate("/login");
   }
 
@@ -205,17 +352,32 @@ ${getFullPublicSiteUrl(client)}`;
       background: "transparent",
       color: "#e5e7eb",
       display: "flex",
-      flexDirection: isMobile ? "column" : "row",
+      flexDirection: isMobile
+        ? "column"
+        : "row",
       fontFamily: "Arial, sans-serif",
       overflowX: "hidden"
     },
 
     sidebar: {
-      width: isMobile ? "100%" : "260px",
+      width: isMobile
+        ? "100%"
+        : "260px",
+
       background: "rgba(2,6,23,0.92)",
-      padding: isMobile ? "20px" : "28px 22px",
-      borderRight: isMobile ? "none" : "1px solid #1e293b",
-      borderBottom: isMobile ? "1px solid #1e293b" : "none",
+
+      padding: isMobile
+        ? "20px"
+        : "28px 22px",
+
+      borderRight: isMobile
+        ? "none"
+        : "1px solid #1e293b",
+
+      borderBottom: isMobile
+        ? "1px solid #1e293b"
+        : "none",
+
       boxSizing: "border-box"
     },
 
@@ -229,7 +391,9 @@ ${getFullPublicSiteUrl(client)}`;
     sidebarText: {
       color: "#94a3b8",
       fontSize: "14px",
-      marginBottom: isMobile ? "18px" : "30px"
+      marginBottom: isMobile
+        ? "18px"
+        : "30px"
     },
 
     sidebarItem: {
@@ -254,7 +418,10 @@ ${getFullPublicSiteUrl(client)}`;
 
     sidebarButton: {
       width: "100%",
-      marginTop: isMobile ? "10px" : "25px",
+      marginTop: isMobile
+        ? "10px"
+        : "25px",
+
       padding: "12px",
       borderRadius: "12px",
       border: "none",
@@ -267,22 +434,39 @@ ${getFullPublicSiteUrl(client)}`;
     main: {
       flex: 1,
       width: "100%",
-      padding: isMobile ? "18px" : "35px",
+      padding: isMobile
+        ? "18px"
+        : "35px",
+
       overflowX: "hidden",
       boxSizing: "border-box"
     },
 
     header: {
       display: "flex",
-      flexDirection: isMobile ? "column" : "row",
+
+      flexDirection: isMobile
+        ? "column"
+        : "row",
+
       justifyContent: "space-between",
-      alignItems: isMobile ? "stretch" : "center",
-      gap: isMobile ? "16px" : "0",
+
+      alignItems: isMobile
+        ? "stretch"
+        : "center",
+
+      gap: isMobile
+        ? "16px"
+        : "0",
+
       marginBottom: "28px"
     },
 
     title: {
-      fontSize: isMobile ? "28px" : "32px",
+      fontSize: isMobile
+        ? "28px"
+        : "32px",
+
       margin: 0
     },
 
@@ -293,9 +477,11 @@ ${getFullPublicSiteUrl(client)}`;
 
     statsGrid: {
       display: "grid",
+
       gridTemplateColumns: isMobile
         ? "1fr"
         : "repeat(auto-fit, minmax(180px, 1fr))",
+
       gap: "18px",
       marginBottom: "30px"
     },
@@ -320,7 +506,10 @@ ${getFullPublicSiteUrl(client)}`;
       background: "rgba(15,23,42,0.82)",
       border: "1px solid #1f2937",
       borderRadius: "20px",
-      padding: isMobile ? "18px" : "24px",
+      padding: isMobile
+        ? "18px"
+        : "24px",
+
       marginBottom: "28px",
       boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
       overflow: "hidden",
@@ -329,9 +518,11 @@ ${getFullPublicSiteUrl(client)}`;
 
     formGrid: {
       display: "grid",
+
       gridTemplateColumns: isMobile
         ? "1fr"
         : "repeat(auto-fit, minmax(220px, 1fr))",
+
       gap: "14px"
     },
 
@@ -344,9 +535,7 @@ ${getFullPublicSiteUrl(client)}`;
       background: "#020617",
       color: "#e5e7eb",
       outline: "none",
-      boxSizing: "border-box",
-      overflow: "hidden",
-      textOverflow: "ellipsis"
+      boxSizing: "border-box"
     },
 
     select: {
@@ -360,7 +549,10 @@ ${getFullPublicSiteUrl(client)}`;
     },
 
     primaryButton: {
-      width: isMobile ? "100%" : "auto",
+      width: isMobile
+        ? "100%"
+        : "auto",
+
       padding: "12px 18px",
       borderRadius: "12px",
       border: "none",
@@ -372,9 +564,11 @@ ${getFullPublicSiteUrl(client)}`;
 
     clientGrid: {
       display: "grid",
+
       gridTemplateColumns: isMobile
         ? "1fr"
         : "repeat(auto-fit, minmax(320px, 1fr))",
+
       gap: "18px"
     },
 
@@ -382,7 +576,10 @@ ${getFullPublicSiteUrl(client)}`;
       background: "rgba(2,6,23,0.92)",
       border: "1px solid #1e293b",
       borderRadius: "18px",
-      padding: isMobile ? "16px" : "20px",
+      padding: isMobile
+        ? "16px"
+        : "20px",
+
       overflow: "hidden",
       backdropFilter: "blur(10px)"
     },
@@ -398,9 +595,11 @@ ${getFullPublicSiteUrl(client)}`;
 
     actions: {
       display: "grid",
+
       gridTemplateColumns: isMobile
         ? "1fr"
         : "repeat(auto-fit, minmax(130px, 1fr))",
+
       gap: "10px",
       marginTop: "16px"
     },
@@ -437,38 +636,56 @@ ${getFullPublicSiteUrl(client)}`;
       color: "#e5e7eb",
       outline: "none",
       boxSizing: "border-box",
-      fontSize: isMobile ? "13px" : "14px"
+      fontSize: isMobile
+        ? "13px"
+        : "14px"
     }
   };
 
   function getStatusBadge(status) {
+
     if (status === "activo") {
       return {
-        background: "rgba(34,197,94,0.15)",
+        background:
+          "rgba(34,197,94,0.15)",
+
         color: "#22c55e",
-        border: "1px solid rgba(34,197,94,0.35)"
+
+        border:
+          "1px solid rgba(34,197,94,0.35)"
       };
     }
 
     if (status === "suspendido") {
       return {
-        background: "rgba(239,68,68,0.15)",
+        background:
+          "rgba(239,68,68,0.15)",
+
         color: "#ef4444",
-        border: "1px solid rgba(239,68,68,0.35)"
+
+        border:
+          "1px solid rgba(239,68,68,0.35)"
       };
     }
 
     return {
-      background: "rgba(250,204,21,0.15)",
+      background:
+        "rgba(250,204,21,0.15)",
+
       color: "#facc15",
-      border: "1px solid rgba(250,204,21,0.35)"
+
+      border:
+        "1px solid rgba(250,204,21,0.35)"
     };
   }
 
   function sidebarStyle(section) {
     return {
       ...styles.sidebarItem,
-      ...(activeSection === section ? styles.sidebarItemActive : {})
+
+      ...(activeSection === section
+        ? styles.sidebarItemActive
+        : {})
     };
   }
 
@@ -483,9 +700,17 @@ ${getFullPublicSiteUrl(client)}`;
           })
         }
       >
-        <option value="Basic">Basic - $500</option>
-        <option value="Medium">Medium - $900</option>
-        <option value="Premium">Premium - $1200</option>
+        <option value="Basic">
+          Basic - $500
+        </option>
+
+        <option value="Medium">
+          Medium - $900
+        </option>
+
+        <option value="Premium">
+          Premium - $1200
+        </option>
       </select>
     );
   }
@@ -501,9 +726,17 @@ ${getFullPublicSiteUrl(client)}`;
           })
         }
       >
-        <option value="activo">Activo</option>
-        <option value="pendiente">Pendiente</option>
-        <option value="suspendido">Suspendido</option>
+        <option value="activo">
+          Activo
+        </option>
+
+        <option value="pendiente">
+          Pendiente
+        </option>
+
+        <option value="suspendido">
+          Suspendido
+        </option>
       </select>
     );
   }
@@ -513,7 +746,9 @@ ${getFullPublicSiteUrl(client)}`;
       <span
         style={{
           ...styles.badge,
-          ...getStatusBadge(status || "activo")
+          ...getStatusBadge(
+            status || "activo"
+          )
         }}
       >
         {status || "activo"}
@@ -526,254 +761,43 @@ ${getFullPublicSiteUrl(client)}`;
       <div style={styles.statsGrid}>
         <div style={styles.statCard}>
           <div>Total clientes</div>
-          <div style={styles.statNumber}>{stats.total}</div>
+
+          <div style={styles.statNumber}>
+            {stats.total}
+          </div>
         </div>
 
         <div style={styles.statCard}>
           <div>Activos</div>
-          <div style={styles.statNumber}>{stats.active}</div>
+
+          <div style={styles.statNumber}>
+            {stats.active}
+          </div>
         </div>
 
         <div style={styles.statCard}>
           <div>Pendientes</div>
-          <div style={styles.statNumber}>{stats.pending}</div>
+
+          <div style={styles.statNumber}>
+            {stats.pending}
+          </div>
         </div>
 
         <div style={styles.statCard}>
           <div>Suspendidos</div>
-          <div style={styles.statNumber}>{stats.suspended}</div>
+
+          <div style={styles.statNumber}>
+            {stats.suspended}
+          </div>
         </div>
 
         <div style={styles.statCard}>
           <div>Ingresos estimados</div>
-          <div style={styles.statNumber}>${stats.revenue}</div>
+
+          <div style={styles.statNumber}>
+            ${stats.revenue}
+          </div>
         </div>
       </div>
     );
   }
-
-  function renderClients() {
-    return (
-      <>
-        <section style={styles.section}>
-          <h2>Crear nuevo cliente</h2>
-
-          <form onSubmit={addClient}>
-            <div style={styles.formGrid}>
-              <input
-                style={styles.input}
-                name="businessName"
-                value={newClient.businessName}
-                onChange={handleChange}
-                placeholder="Nombre del negocio"
-              />
-
-              <input
-                style={styles.input}
-                name="slug"
-                value={newClient.slug}
-                onChange={handleChange}
-                placeholder="Slug del sitio"
-              />
-
-              <input
-                style={styles.input}
-                name="email"
-                value={newClient.email}
-                onChange={handleChange}
-                placeholder="Email"
-              />
-
-              <input
-                style={styles.input}
-                name="phone"
-                value={newClient.phone}
-                onChange={handleChange}
-                placeholder="Teléfono"
-              />
-
-              <input
-                style={styles.input}
-                name="password"
-                value={newClient.password}
-                onChange={handleChange}
-                placeholder="Contraseña"
-              />
-            </div>
-
-            <br />
-
-            <button type="submit" style={styles.primaryButton}>
-              Crear cliente
-            </button>
-          </form>
-        </section>
-
-        <section style={styles.section}>
-          <h2>Clientes registrados</h2>
-
-          <div style={styles.clientGrid}>
-            {clients.map((client) => (
-              <div key={client.id} style={styles.clientCard}>
-                <StatusBadge status={client.status} />
-
-                <h3>{client.businessName}</h3>
-
-                <p>
-                  <strong>Status:</strong>
-                </p>
-
-                <StatusSelect client={client} />
-
-                <p>
-                  <strong>Slug:</strong> {client.slug}
-                </p>
-
-                <p>
-                  <strong>🌐 Sitio público:</strong>
-                </p>
-
-                <input
-                  style={styles.linkInput}
-                  readOnly
-                  value={getFullPublicSiteUrl(client)}
-                />
-
-                <p style={{ marginTop: "12px" }}>
-                  <strong>🔐 Panel cliente:</strong>
-                </p>
-
-                <input
-                  style={styles.linkInput}
-                  readOnly
-                  value={getClientLoginUrl()}
-                />
-
-                <p style={{ marginTop: "12px" }}>
-                  <strong>📧 Email:</strong>
-                </p>
-
-                <input
-                  style={styles.input}
-                  readOnly
-                  value={client.email || ""}
-                />
-
-                <p style={{ marginTop: "12px" }}>
-                  <strong>🔑 Contraseña:</strong>
-                </p>
-
-                <input
-                  style={styles.input}
-                  readOnly
-                  value={client.password || ""}
-                />
-
-                <p>
-                  <strong>Plan:</strong>
-                </p>
-
-                <PlanSelect client={client} />
-
-                <div style={styles.actions}>
-                  <a
-                    href={getFullPublicSiteUrl(client)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <button style={styles.darkButton}>
-                      🌐 Abrir sitio
-                    </button>
-                  </a>
-
-                  <button
-                    onClick={() => copySiteUrl(client)}
-                    style={styles.darkButton}
-                  >
-                    📋 Copiar web
-                  </button>
-
-                  <button
-                    onClick={() => copyClientAccess(client)}
-                    style={styles.darkButton}
-                  >
-                    🔐 Copiar acceso
-                  </button>
-
-                  <button
-                    onClick={() => editClientSite(client.id)}
-                    style={styles.darkButton}
-                  >
-                    ✏️ Editar
-                  </button>
-
-                  <button
-                    onClick={() => deleteClient(client.id)}
-                    style={styles.deleteButton}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </>
-    );
-  }
-
-  return (
-    <div style={styles.page}>
-      <aside style={styles.sidebar}>
-        <div style={styles.brand}>SitiosWebDLB</div>
-
-        <p style={styles.sidebarText}>Panel administrativo</p>
-
-        <button
-          style={sidebarStyle("dashboard")}
-          onClick={() => setActiveSection("dashboard")}
-        >
-          📊 Dashboard
-        </button>
-
-        <button
-          style={sidebarStyle("clients")}
-          onClick={() => setActiveSection("clients")}
-        >
-          👥 Clientes
-        </button>
-
-        <button onClick={logout} style={styles.sidebarButton}>
-          Cerrar sesión
-        </button>
-      </aside>
-
-      <main style={styles.main}>
-        <div style={styles.header}>
-          <div>
-            <h1 style={styles.title}>Panel Admin</h1>
-
-            <p style={styles.subtitle}>
-              Administra clientes y sitios web.
-            </p>
-          </div>
-
-          <button
-            onClick={() => loadClients(true)}
-            style={styles.primaryButton}
-          >
-            {loadingRefresh
-              ? "Actualizando..."
-              : refreshSuccess
-              ? "Datos actualizados"
-              : "Actualizar"}
-          </button>
-        </div>
-
-        {activeSection === "dashboard" && renderDashboard()}
-        {activeSection === "clients" && renderClients()}
-      </main>
-    </div>
-  );
-}
