@@ -207,6 +207,7 @@ function BuilderHome() {
             JSON.stringify(project?.design || {})
           }
           project={project}
+          setProject={setProject}
           visiblePages={visiblePages}
         />
       </main>

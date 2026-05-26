@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { fixedCredit } from "../utils/defaultProject.js";
 import { renderField } from "../utils/renderField.jsx";
 
-export function Preview({ project, visiblePages = [] }) {
+export function Preview({ project, setProject, visiblePages = [] }) {
   const pages = project?.pages || [];
   const business = project?.business || {};
   const design = project?.design || {};
@@ -131,6 +131,7 @@ export function Preview({ project, visiblePages = [] }) {
         <PreviewPage
           page={activePage}
           project={project}
+          setProject={setProject}
           backgroundMode={backgroundMode}
           overlay={overlay}
         />
@@ -165,7 +166,7 @@ export function Preview({ project, visiblePages = [] }) {
   );
 }
 
-function PreviewPage({ page, project, backgroundMode, overlay }) {
+function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
   const business = project?.business || {};
   const services = project?.services || [];
   const gallery = project?.gallery || [];
@@ -175,8 +176,68 @@ function PreviewPage({ page, project, backgroundMode, overlay }) {
   };
   const buttons = project?.buttons || {};
   const design = project?.design || {};
+  const positions = design.positions || {};
 
   if (!page) return null;
+
+  function savePosition(key, x, y) {
+    if (!setProject) return;
+
+    setProject((prev) => ({
+      ...prev,
+      updatedAt: Date.now(),
+      design: {
+        ...prev.design,
+        positions: {
+          ...(prev.design?.positions || {}),
+          [key]: {
+            x,
+            y
+          }
+        }
+      }
+    }));
+  }
+
+  function getPosition(key) {
+    return positions[key] || { x: 0, y: 0 };
+  }
+
+  function startDrag(e, key) {
+    if (!setProject) return;
+
+    e.preventDefault();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const current = getPosition(key);
+
+    function onMove(moveEvent) {
+      const nextX = current.x + (moveEvent.clientX - startX);
+      const nextY = current.y + (moveEvent.clientY - startY);
+
+      savePosition(key, nextX, nextY);
+    }
+
+    function onUp() {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  function draggableStyle(key) {
+    const pos = getPosition(key);
+
+    return {
+      transform: `translate(${pos.x}px, ${pos.y}px)`,
+      cursor: setProject ? "grab" : "default",
+      userSelect: "none",
+      display: "inline-block"
+    };
+  }
 
   const heroImage = design.heroBackground || "";
 
@@ -247,10 +308,22 @@ function PreviewPage({ page, project, backgroundMode, overlay }) {
       <>
         <section className="siteHero" style={heroBgStyle}>
           <div>
-            <h1 style={{ color: design.titleColor || "#facc15" }}>
+            <h1
+              onMouseDown={(e) => startDrag(e, "heroTitle")}
+              style={{
+                color: design.titleColor || "#facc15",
+                ...draggableStyle("heroTitle")
+              }}
+            >
               {business.name}
             </h1>
-            <p>{business.hero}</p>
+
+            <p
+              onMouseDown={(e) => startDrag(e, "heroText")}
+              style={draggableStyle("heroText")}
+            >
+              {business.hero}
+            </p>
           </div>
         </section>
 
