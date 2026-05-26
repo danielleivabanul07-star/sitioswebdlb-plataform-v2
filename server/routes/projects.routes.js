@@ -1,14 +1,7 @@
 import express from "express";
 import { randomUUID } from "crypto";
 import { defaultProject } from "../../src/utils/defaultProject.js";
-import { readUsers } from "../db.js";
-
-import {
-  projects,
-  clientData,
-  saveProjects,
-  saveClientData
-} from "../store.js";
+import { supabase } from "../config/db.js";
 
 import {
   requireAuth,
@@ -17,28 +10,28 @@ import {
 
 const router = express.Router();
 
-function findClientByIdOrSlug(value) {
-  const users = readUsers();
+async function findClientByIdOrSlug(value) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .or(`id.eq.${value},slug.eq.${value}`)
+    .maybeSingle();
 
-  return users.find(
-    (user) =>
-      String(user.id) === String(value) ||
-      String(user.slug || "") === String(value)
-  );
+  if (error) throw error;
+  return data;
 }
 
-function getProjectKey(value) {
-  const user = findClientByIdOrSlug(value);
-
+async function getProjectKey(value) {
+  const user = await findClientByIdOrSlug(value);
   return user ? String(user.id) : String(value);
 }
 
-function createProjectForClient(clientId) {
-  const users = readUsers();
-
-  const user = users.find(
-    (u) => String(u.id) === String(clientId)
-  );
+async function createProjectForClient(clientId) {
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", clientId)
+    .maybeSingle();
 
   const baseProject = {
     ...defaultProject,
@@ -48,59 +41,87 @@ function createProjectForClient(clientId) {
   if (user) {
     baseProject.business = {
       ...baseProject.business,
-      name: user.businessName || baseProject.business.name,
-      email: user.email || baseProject.business.email,
-      phone: user.phone || baseProject.business.phone
+      name: user.businessName || baseProject.business?.name,
+      email: user.email || baseProject.business?.email,
+      phone: user.phone || baseProject.business?.phone
     };
   }
 
   return baseProject;
 }
 
-function syncClientDataFromProject(projectKey) {
-  const users = readUsers();
+async function getOrCreateProject(clientId) {
+  const { data: existing, error: getError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("client_id", clientId)
+    .maybeSingle();
 
-  const user = users.find(
-    (u) => String(u.id) === String(projectKey)
-  );
+  if (getError) throw getError;
 
-  if (!user) return;
+  if (existing?.data) {
+    return existing.data;
+  }
 
-  const project = projects[projectKey];
+  const newProject = await createProjectForClient(clientId);
 
-  clientData[user.email] = {
-    ...(clientData[user.email] || {}),
+  const { error: insertError } = await supabase
+    .from("projects")
+    .insert([
+      {
+        client_id: clientId,
+        data: newProject
+      }
+    ]);
 
-    phone: project.business?.phone || "",
-    hours: project.business?.hours || "",
-    facebook: project.business?.facebook || "",
-    instagram: project.business?.instagram || "",
-    tiktok: project.business?.tiktok || "",
+  if (insertError) throw insertError;
 
-    photos: (project.gallery || []).map((photo) => ({
-      id: photo.id || randomUUID(),
-      name: photo.title || "Imagen",
-      url: photo.src
-    }))
-  };
-
-  saveClientData();
+  return newProject;
 }
 
-// =========================
+async function saveProject(clientId, projectData) {
+  const cleanProject = {
+    ...projectData,
+    clientId: String(clientId),
+    updatedAt: new Date().toISOString()
+  };
+
+  const { error } = await supabase
+    .from("projects")
+    .upsert(
+      {
+        client_id: clientId,
+        data: cleanProject,
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "client_id"
+      }
+    );
+
+  if (error) throw error;
+
+  return cleanProject;
+}
+
+async function syncClientDataFromProject(clientId, project) {
+  const business = project.business || {};
+
+  await supabase
+    .from("users")
+    .update({
+      phone: business.phone || "",
+      businessName: business.name || undefined,
+      siteUrl: `/site/${clientId}`
+    })
+    .eq("id", clientId);
+}
+
 // CLIENT GET OWN PROJECT
-// =========================
-
-router.get("/me/project", requireAuth, (req, res) => {
+router.get("/me/project", requireAuth, async (req, res) => {
   try {
-    const projectKey = String(req.user.id);
-
-    if (!projects[projectKey]) {
-      projects[projectKey] = createProjectForClient(projectKey);
-      saveProjects();
-    }
-
-    res.json(projects[projectKey]);
+    const project = await getOrCreateProject(req.user.id);
+    res.json(project);
   } catch (err) {
     console.error("ERROR GET CLIENT PROJECT:", err);
 
@@ -111,71 +132,33 @@ router.get("/me/project", requireAuth, (req, res) => {
   }
 });
 
-// =========================
 // CLIENT UPDATE OWN PROJECT
-// =========================
-
-router.patch("/me/project", requireAuth, (req, res) => {
+router.patch("/me/project", requireAuth, async (req, res) => {
   try {
-    const projectKey = String(req.user.id);
+    const current = await getOrCreateProject(req.user.id);
 
-    if (!projects[projectKey]) {
-      projects[projectKey] = createProjectForClient(projectKey);
-    }
-
-    const current = projects[projectKey];
-
-    projects[projectKey] = {
+    const updatedProject = {
       ...current,
-
+      ...req.body,
       business: {
         ...current.business,
-
-        phone:
-          req.body.business?.phone ??
-          current.business?.phone ??
-          "",
-
-        hours:
-          req.body.business?.hours ??
-          current.business?.hours ??
-          "",
-
-        facebook:
-          req.body.business?.facebook ??
-          current.business?.facebook ??
-          "",
-
-        instagram:
-          req.body.business?.instagram ??
-          current.business?.instagram ??
-          "",
-
-        tiktok:
-          req.body.business?.tiktok ??
-          current.business?.tiktok ??
-          "",
-
-        description:
-          req.body.business?.description ??
-          current.business?.description ??
-          ""
+        ...(req.body.business || {})
       },
-
-      gallery:
-        Array.isArray(req.body.gallery)
-          ? req.body.gallery
-          : current.gallery ?? [],
-
+      gallery: Array.isArray(req.body.gallery)
+        ? req.body.gallery.map((photo) => ({
+            ...photo,
+            id: photo.id || randomUUID()
+          }))
+        : current.gallery || [],
       updatedAt: new Date().toISOString()
     };
 
-    saveProjects();
-    syncClientDataFromProject(projectKey);
+    const saved = await saveProject(req.user.id, updatedProject);
+    await syncClientDataFromProject(req.user.id, saved);
 
     res.json({
       success: true,
-      project: projects[projectKey]
+      project: saved
     });
   } catch (err) {
     console.error("ERROR SAVE CLIENT PROJECT:", err);
@@ -187,35 +170,33 @@ router.patch("/me/project", requireAuth, (req, res) => {
   }
 });
 
-// =========================
 // ADMIN UPDATE ANY PROJECT
-// =========================
-
 router.patch(
   "/admin/:clientId",
   requireAuth,
   requireAdmin,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const projectKey = String(req.params.clientId);
+      const clientId = String(req.params.clientId);
+      const current = await getOrCreateProject(clientId);
 
-      if (!projects[projectKey]) {
-        projects[projectKey] = createProjectForClient(projectKey);
-      }
-
-      projects[projectKey] = {
-        ...projects[projectKey],
+      const updatedProject = {
+        ...current,
         ...req.body,
-        clientId: projectKey,
+        clientId,
+        business: {
+          ...current.business,
+          ...(req.body.business || {})
+        },
         updatedAt: new Date().toISOString()
       };
 
-      saveProjects();
-      syncClientDataFromProject(projectKey);
+      const saved = await saveProject(clientId, updatedProject);
+      await syncClientDataFromProject(clientId, saved);
 
       res.json({
         success: true,
-        project: projects[projectKey]
+        project: saved
       });
     } catch (err) {
       console.error("ERROR ADMIN SAVE PROJECT:", err);
@@ -228,21 +209,13 @@ router.patch(
   }
 );
 
-// =========================
 // PUBLIC GET PROJECT BY ID OR SLUG
-// =========================
-
-router.get("/:clientIdOrSlug", (req, res) => {
+router.get("/:clientIdOrSlug", async (req, res) => {
   try {
-    const { clientIdOrSlug } = req.params;
-    const projectKey = getProjectKey(clientIdOrSlug);
+    const projectKey = await getProjectKey(req.params.clientIdOrSlug);
+    const project = await getOrCreateProject(projectKey);
 
-    if (!projects[projectKey]) {
-      projects[projectKey] = createProjectForClient(projectKey);
-      saveProjects();
-    }
-
-    res.json(projects[projectKey]);
+    res.json(project);
   } catch (err) {
     console.error("ERROR GET PROJECT:", err);
 
@@ -253,28 +226,26 @@ router.get("/:clientIdOrSlug", (req, res) => {
   }
 });
 
-// =========================
 // LEGACY SAVE PROJECT
-// =========================
-
-router.post("/:clientIdOrSlug", (req, res) => {
+router.post("/:clientIdOrSlug", async (req, res) => {
   try {
-    const { clientIdOrSlug } = req.params;
-    const projectKey = getProjectKey(clientIdOrSlug);
+    const projectKey = await getProjectKey(req.params.clientIdOrSlug);
 
-    projects[projectKey] = {
-      ...projects[projectKey],
+    const current = await getOrCreateProject(projectKey);
+
+    const updatedProject = {
+      ...current,
       ...req.body,
       clientId: projectKey,
       updatedAt: new Date().toISOString()
     };
 
-    saveProjects();
-    syncClientDataFromProject(projectKey);
+    const saved = await saveProject(projectKey, updatedProject);
+    await syncClientDataFromProject(projectKey, saved);
 
     res.json({
       success: true,
-      project: projects[projectKey]
+      project: saved
     });
   } catch (err) {
     console.error("ERROR SAVE PROJECT:", err);
