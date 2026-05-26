@@ -1,17 +1,9 @@
 import { Download, Save, Upload } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
 import { PagesEditor } from "./PagesEditor.jsx";
 import { ServicesEditor } from "./ServicesEditor.jsx";
 import { GalleryEditor } from "./GalleryEditor.jsx";
 import { FormBuilder } from "./FormBuilder.jsx";
 import { AITools } from "./AITools.jsx";
-
-const supabase = createClient(
-  "https://xkehxgpzolkhjmjjscxr.supabase.co",
-  "sb_publishable_P1VuCqfYNf6uhlZsazicpA_x8w7Rdcc"
-);
-
-const STORAGE_BUCKET = "site-backgrounds";
 
 export function BuilderPanel({
   project,
@@ -36,55 +28,24 @@ export function BuilderPanel({
     }));
   }
 
-  function getClientFolder() {
-    return project.clientId || project.id || "default-client";
-  }
-
-  async function uploadImageToSupabase(file, folder, prefix) {
-    if (!file) return null;
-
-    const extension = file.name.split(".").pop() || "jpg";
-    const safeName = `${prefix}-${Date.now()}.${extension}`;
-    const filePath = `${getClientFolder()}/${folder}/${safeName}`;
-
-    const { error } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: true
-      });
-
-    if (error) {
-      console.log("Supabase upload error:", error);
-      alert("Error subiendo imagen a Supabase");
-      return null;
-    }
-
-    const { data } = supabase.storage
-      .from(STORAGE_BUCKET)
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  }
-
-  async function handleHeroBackground(file) {
+  function handleHeroBackground(file) {
     if (!file) return;
 
-    const imageUrl = await uploadImageToSupabase(file, "heroes", "hero");
+    const reader = new FileReader();
 
-    if (!imageUrl) return;
+    reader.onload = () => {
+      setProject((prev) => ({
+        ...prev,
+        updatedAt: Date.now(),
+        design: {
+          ...prev.design,
+          heroBackground: reader.result,
+          heroBackgroundName: file.name || "fondo-hero.jpg"
+        }
+      }));
+    };
 
-    setProject((prev) => ({
-      ...prev,
-      updatedAt: Date.now(),
-      design: {
-        ...prev.design,
-        heroBackground: imageUrl,
-        heroBackgroundName: file.name || "fondo-hero.jpg"
-      }
-    }));
-
-    alert("Hero actualizado correctamente");
+    reader.readAsDataURL(file);
   }
 
   function removeHeroBackground() {
@@ -99,25 +60,25 @@ export function BuilderPanel({
     }));
   }
 
-  async function handleGlobalBackground(file) {
+  function handleGlobalBackground(file) {
     if (!file) return;
 
-    const imageUrl = await uploadImageToSupabase(file, "backgrounds", "global");
+    const reader = new FileReader();
 
-    if (!imageUrl) return;
+    reader.onload = () => {
+      setProject((prev) => ({
+        ...prev,
+        updatedAt: Date.now(),
+        design: {
+          ...prev.design,
+          globalBackground: reader.result,
+          globalBackgroundName: file.name || "fondo-global.jpg",
+          backgroundMode: "global"
+        }
+      }));
+    };
 
-    setProject((prev) => ({
-      ...prev,
-      updatedAt: Date.now(),
-      design: {
-        ...prev.design,
-        globalBackground: imageUrl,
-        globalBackgroundName: file.name || "fondo-global.jpg",
-        backgroundMode: "global"
-      }
-    }));
-
-    alert("Fondo global actualizado correctamente");
+    reader.readAsDataURL(file);
   }
 
   function removeGlobalBackground() {
@@ -132,38 +93,34 @@ export function BuilderPanel({
     }));
   }
 
-  async function handlePageBackground(index, file) {
+  function handlePageBackground(index, file) {
     if (!file) return;
 
-    const imageUrl = await uploadImageToSupabase(
-      file,
-      "pages",
-      `page-${index}`
-    );
+    const reader = new FileReader();
 
-    if (!imageUrl) return;
+    reader.onload = () => {
+      setProject((prev) => {
+        const updatedPages = [...prev.pages];
 
-    setProject((prev) => {
-      const updatedPages = [...prev.pages];
+        updatedPages[index] = {
+          ...updatedPages[index],
+          background: reader.result,
+          backgroundName: file.name || "fondo-pagina.jpg"
+        };
 
-      updatedPages[index] = {
-        ...updatedPages[index],
-        background: imageUrl,
-        backgroundName: file.name || "fondo-pagina.jpg"
-      };
+        return {
+          ...prev,
+          updatedAt: Date.now(),
+          pages: updatedPages,
+          design: {
+            ...prev.design,
+            backgroundMode: "perPage"
+          }
+        };
+      });
+    };
 
-      return {
-        ...prev,
-        updatedAt: Date.now(),
-        pages: updatedPages,
-        design: {
-          ...prev.design,
-          backgroundMode: "perPage"
-        }
-      };
-    });
-
-    alert("Fondo de página actualizado correctamente");
+    reader.readAsDataURL(file);
   }
 
   function removePageBackground(index) {
