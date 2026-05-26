@@ -44,7 +44,7 @@ export function Preview({ project, visiblePages = [] }) {
             design.globalBackgroundPositionY ?? 50
           }%`,
           backgroundRepeat: "no-repeat",
-          backgroundAttachment: "scroll",
+          backgroundAttachment: design.backgroundFixed ? "fixed" : "scroll",
           backgroundColor: "#000"
         }
       : {
@@ -215,6 +215,7 @@ function PreviewPage({ page, project, backgroundMode, overlay }) {
             page.backgroundPositionY ?? 50
           }%`,
           backgroundRepeat: "no-repeat",
+          backgroundAttachment: design.backgroundFixed ? "fixed" : "scroll",
           backgroundColor: "#000"
         }
       : {

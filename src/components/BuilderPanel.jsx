@@ -393,6 +393,19 @@ export function BuilderPanel({
           </select>
         </label>
 
+        <label>
+          Imagen de fondo fija
+          <select
+            value={design.backgroundFixed ? "yes" : "no"}
+            onChange={(e) =>
+              updateDesign("backgroundFixed", e.target.value === "yes")
+            }
+          >
+            <option value="yes">Sí, dejar fija al hacer scroll</option>
+            <option value="no">No, mover con la página</option>
+          </select>
+        </label>
+
         <Box>
           <h4>Ajuste fondo global</h4>
 
