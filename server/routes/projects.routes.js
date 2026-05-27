@@ -79,6 +79,43 @@ async function getOrCreateProject(clientId) {
   return newProject;
 }
 
+function normalizeProject(clientId, current, incoming) {
+  return {
+    ...current,
+    ...incoming,
+    clientId: String(clientId),
+
+    business: {
+      ...(current.business || {}),
+      ...(incoming.business || {})
+    },
+
+    design: {
+      ...(current.design || {}),
+      ...(incoming.design || {}),
+
+      positions: incoming.design?.positions || current.design?.positions || {},
+      hiddenElements:
+        incoming.design?.hiddenElements ||
+        current.design?.hiddenElements ||
+        {},
+      lockedElements:
+        incoming.design?.lockedElements ||
+        current.design?.lockedElements ||
+        {}
+    },
+
+    gallery: Array.isArray(incoming.gallery)
+      ? incoming.gallery.map((photo) => ({
+          ...photo,
+          id: photo.id || randomUUID()
+        }))
+      : current.gallery || [],
+
+    updatedAt: new Date().toISOString()
+  };
+}
+
 async function saveProject(clientId, projectData) {
   const cleanProject = {
     ...projectData,
@@ -136,22 +173,7 @@ router.get("/me/project", requireAuth, async (req, res) => {
 router.patch("/me/project", requireAuth, async (req, res) => {
   try {
     const current = await getOrCreateProject(req.user.id);
-
-    const updatedProject = {
-      ...current,
-      ...req.body,
-      business: {
-        ...current.business,
-        ...(req.body.business || {})
-      },
-      gallery: Array.isArray(req.body.gallery)
-        ? req.body.gallery.map((photo) => ({
-            ...photo,
-            id: photo.id || randomUUID()
-          }))
-        : current.gallery || [],
-      updatedAt: new Date().toISOString()
-    };
+    const updatedProject = normalizeProject(req.user.id, current, req.body);
 
     const saved = await saveProject(req.user.id, updatedProject);
     await syncClientDataFromProject(req.user.id, saved);
@@ -179,17 +201,7 @@ router.patch(
     try {
       const clientId = String(req.params.clientId);
       const current = await getOrCreateProject(clientId);
-
-      const updatedProject = {
-        ...current,
-        ...req.body,
-        clientId,
-        business: {
-          ...current.business,
-          ...(req.body.business || {})
-        },
-        updatedAt: new Date().toISOString()
-      };
+      const updatedProject = normalizeProject(clientId, current, req.body);
 
       const saved = await saveProject(clientId, updatedProject);
       await syncClientDataFromProject(clientId, saved);
@@ -230,15 +242,8 @@ router.get("/:clientIdOrSlug", async (req, res) => {
 router.post("/:clientIdOrSlug", async (req, res) => {
   try {
     const projectKey = await getProjectKey(req.params.clientIdOrSlug);
-
     const current = await getOrCreateProject(projectKey);
-
-    const updatedProject = {
-      ...current,
-      ...req.body,
-      clientId: projectKey,
-      updatedAt: new Date().toISOString()
-    };
+    const updatedProject = normalizeProject(projectKey, current, req.body);
 
     const saved = await saveProject(projectKey, updatedProject);
     await syncClientDataFromProject(projectKey, saved);
