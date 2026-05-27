@@ -9,11 +9,19 @@ export default function ImportedSite() {
   useEffect(() => {
     async function loadSite() {
       try {
+        const baseUrl =
+          `https://xkehxgpzolkhjmjjscxr.supabase.co/storage/v1/object/public/imported-sites/${clientId}/`;
+
         const response = await fetch(
-          `https://xkehxgpzolkhjmjjscxr.supabase.co/storage/v1/object/public/imported-sites/${clientId}/index.html`
+          `${baseUrl}index.html`
         );
 
-        const text = await response.text();
+        let text = await response.text();
+
+        text = text.replace(
+          "<head>",
+          `<head><base href="${baseUrl}">`
+        );
 
         setHtml(text);
       } catch (error) {
