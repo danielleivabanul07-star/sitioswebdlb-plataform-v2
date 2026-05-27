@@ -21,7 +21,9 @@ export default function AdminPanel() {
     businessName: "",
     email: "",
     phone: "",
-    password: ""
+    password: "",
+    siteMode: "builder",
+    externalSiteUrl: ""
   });
 
   const [newClient, setNewClient] = useState({
@@ -32,7 +34,9 @@ export default function AdminPanel() {
     status: "activo",
     plan: "Basic",
     siteUrl: "",
-    slug: ""
+    slug: "",
+    siteMode: "builder",
+    externalSiteUrl: ""
   });
 
   useEffect(() => {
@@ -77,24 +81,13 @@ export default function AdminPanel() {
 
     return clients.filter((client) => {
       return (
-        String(client.businessName || "")
-          .toLowerCase()
-          .includes(term) ||
-        String(client.email || "")
-          .toLowerCase()
-          .includes(term) ||
-        String(client.phone || "")
-          .toLowerCase()
-          .includes(term) ||
-        String(client.slug || "")
-          .toLowerCase()
-          .includes(term) ||
-        String(client.plan || "")
-          .toLowerCase()
-          .includes(term) ||
-        String(client.status || "")
-          .toLowerCase()
-          .includes(term)
+        String(client.businessName || "").toLowerCase().includes(term) ||
+        String(client.email || "").toLowerCase().includes(term) ||
+        String(client.phone || "").toLowerCase().includes(term) ||
+        String(client.slug || "").toLowerCase().includes(term) ||
+        String(client.plan || "").toLowerCase().includes(term) ||
+        String(client.status || "").toLowerCase().includes(term) ||
+        String(client.siteUrl || "").toLowerCase().includes(term)
       );
     });
   }, [clients, clientSearch]);
@@ -127,6 +120,10 @@ export default function AdminPanel() {
     }
   }
 
+  function isExternalSite(client) {
+    return String(client?.siteUrl || "").startsWith("http");
+  }
+
   function handleChange(e) {
     setNewClient({
       ...newClient,
@@ -138,7 +135,27 @@ export default function AdminPanel() {
     e.preventDefault();
 
     try {
-      await api.post("/admin/clients", newClient);
+      const clientPayload = {
+        businessName: newClient.businessName,
+        email: newClient.email,
+        phone: newClient.phone,
+        password: newClient.password,
+        status: newClient.status,
+        plan: newClient.plan,
+        slug: newClient.slug
+      };
+
+      const res = await api.post("/admin/clients", clientPayload);
+      const createdClient = res.data;
+
+      if (
+        newClient.siteMode === "external" &&
+        newClient.externalSiteUrl.trim()
+      ) {
+        await api.patch(`/admin/clients/${createdClient.id}`, {
+          siteUrl: newClient.externalSiteUrl.trim()
+        });
+      }
 
       setNewClient({
         businessName: "",
@@ -148,7 +165,9 @@ export default function AdminPanel() {
         status: "activo",
         plan: "Basic",
         siteUrl: "",
-        slug: ""
+        slug: "",
+        siteMode: "builder",
+        externalSiteUrl: ""
       });
 
       loadClients();
@@ -200,11 +219,15 @@ export default function AdminPanel() {
   function openEditClient(client) {
     setEditingClient(client.id);
 
+    const external = isExternalSite(client);
+
     setEditForm({
       businessName: client.businessName || "",
       email: client.email || "",
       phone: client.phone || "",
-      password: ""
+      password: "",
+      siteMode: external ? "external" : "builder",
+      externalSiteUrl: external ? client.siteUrl || "" : ""
     });
   }
 
@@ -215,7 +238,9 @@ export default function AdminPanel() {
       businessName: "",
       email: "",
       phone: "",
-      password: ""
+      password: "",
+      siteMode: "builder",
+      externalSiteUrl: ""
     });
   }
 
@@ -229,6 +254,14 @@ export default function AdminPanel() {
 
       if (editForm.password.trim()) {
         payload.password = editForm.password.trim();
+      }
+
+      if (editForm.siteMode === "external") {
+        payload.siteUrl = editForm.externalSiteUrl.trim();
+      }
+
+      if (editForm.siteMode === "builder") {
+        payload.siteUrl = `/site/${clientId}`;
       }
 
       await api.patch(`/admin/clients/${clientId}`, payload);
@@ -268,11 +301,20 @@ export default function AdminPanel() {
     }
   }
 
-  function editClientSite(clientId) {
-    navigate(`/builder/${clientId}`);
+  function editClientSite(client) {
+    if (isExternalSite(client)) {
+      window.open(client.siteUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    navigate(`/builder/${client.id}`);
   }
 
   function getPublicSiteUrl(client) {
+    if (isExternalSite(client)) {
+      return client.siteUrl;
+    }
+
     if (client.slug) {
       return `/site/${client.slug}`;
     }
@@ -281,7 +323,13 @@ export default function AdminPanel() {
   }
 
   function getFullPublicSiteUrl(client) {
-    return `${SITE_URL}${getPublicSiteUrl(client)}`;
+    const site = getPublicSiteUrl(client);
+
+    if (String(site || "").startsWith("http")) {
+      return site;
+    }
+
+    return `${SITE_URL}${site}`;
   }
 
   function getClientLoginUrl() {
@@ -302,9 +350,7 @@ export default function AdminPanel() {
 
   async function copyClientAccess(client) {
     const visiblePassword =
-      tempPasswords[client.id] ||
-      client.password ||
-      "Contraseña no visible";
+      tempPasswords[client.id] || client.password || "Contraseña no visible";
 
     const accessText = `🔐 Panel cliente:
 ${getClientLoginUrl()}
@@ -569,9 +615,7 @@ ${getFullPublicSiteUrl(client)}`;
   function sidebarStyle(section) {
     return {
       ...styles.sidebarItem,
-      ...(activeSection === section
-        ? styles.sidebarItemActive
-        : {})
+      ...(activeSection === section ? styles.sidebarItemActive : {})
     };
   }
 
@@ -624,42 +668,54 @@ ${getFullPublicSiteUrl(client)}`;
     );
   }
 
+  function SiteTypeBadge({ client }) {
+    const external = isExternalSite(client);
+
+    return (
+      <span
+        style={{
+          ...styles.badge,
+          background: external
+            ? "rgba(59,130,246,0.15)"
+            : "rgba(250,204,21,0.15)",
+          color: external ? "#60a5fa" : "#facc15",
+          border: external
+            ? "1px solid rgba(59,130,246,0.35)"
+            : "1px solid rgba(250,204,21,0.35)",
+          marginLeft: "8px"
+        }}
+      >
+        {external ? "Sitio externo/importado" : "Builder interno"}
+      </span>
+    );
+  }
+
   function renderDashboard() {
     return (
       <div style={styles.statsGrid}>
         <div style={styles.statCard}>
           <div>Total clientes</div>
-          <div style={styles.statNumber}>
-            {stats.total}
-          </div>
+          <div style={styles.statNumber}>{stats.total}</div>
         </div>
 
         <div style={styles.statCard}>
           <div>Activos</div>
-          <div style={styles.statNumber}>
-            {stats.active}
-          </div>
+          <div style={styles.statNumber}>{stats.active}</div>
         </div>
 
         <div style={styles.statCard}>
           <div>Pendientes</div>
-          <div style={styles.statNumber}>
-            {stats.pending}
-          </div>
+          <div style={styles.statNumber}>{stats.pending}</div>
         </div>
 
         <div style={styles.statCard}>
           <div>Suspendidos</div>
-          <div style={styles.statNumber}>
-            {stats.suspended}
-          </div>
+          <div style={styles.statNumber}>{stats.suspended}</div>
         </div>
 
         <div style={styles.statCard}>
           <div>Ingresos estimados</div>
-          <div style={styles.statNumber}>
-            ${stats.revenue}
-          </div>
+          <div style={styles.statNumber}>${stats.revenue}</div>
         </div>
       </div>
     );
@@ -712,14 +768,31 @@ ${getFullPublicSiteUrl(client)}`;
                 onChange={handleChange}
                 placeholder="Contraseña"
               />
+
+              <select
+                style={styles.select}
+                name="siteMode"
+                value={newClient.siteMode}
+                onChange={handleChange}
+              >
+                <option value="builder">Builder interno</option>
+                <option value="external">Sitio externo / importado</option>
+              </select>
+
+              {newClient.siteMode === "external" && (
+                <input
+                  style={styles.input}
+                  name="externalSiteUrl"
+                  value={newClient.externalSiteUrl}
+                  onChange={handleChange}
+                  placeholder="URL del sitio externo/importado"
+                />
+              )}
             </div>
 
             <br />
 
-            <button
-              type="submit"
-              style={styles.primaryButton}
-            >
+            <button type="submit" style={styles.primaryButton}>
               Crear cliente
             </button>
           </form>
@@ -734,9 +807,7 @@ ${getFullPublicSiteUrl(client)}`;
               marginBottom: "18px"
             }}
             value={clientSearch}
-            onChange={(e) =>
-              setClientSearch(e.target.value)
-            }
+            onChange={(e) => setClientSearch(e.target.value)}
             placeholder="Buscar cliente..."
           />
         </section>
@@ -746,11 +817,9 @@ ${getFullPublicSiteUrl(client)}`;
 
           <div style={styles.clientGrid}>
             {filteredClients.map((client) => (
-              <div
-                key={client.id}
-                style={styles.clientCard}
-              >
+              <div key={client.id} style={styles.clientCard}>
                 <StatusBadge status={client.status} />
+                <SiteTypeBadge client={client} />
 
                 <h3>{client.businessName}</h3>
 
@@ -762,8 +831,7 @@ ${getFullPublicSiteUrl(client)}`;
                       onChange={(e) =>
                         setEditForm({
                           ...editForm,
-                          businessName:
-                            e.target.value
+                          businessName: e.target.value
                         })
                       }
                       placeholder="Negocio"
@@ -809,8 +877,7 @@ ${getFullPublicSiteUrl(client)}`;
                       onChange={(e) =>
                         setEditForm({
                           ...editForm,
-                          password:
-                            e.target.value
+                          password: e.target.value
                         })
                       }
                       placeholder="Nueva contraseña"
@@ -819,12 +886,46 @@ ${getFullPublicSiteUrl(client)}`;
                     <br />
                     <br />
 
-                    <button
-                      onClick={() =>
-                        saveClientChanges(
-                          client.id
-                        )
+                    <select
+                      style={styles.select}
+                      value={editForm.siteMode}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          siteMode: e.target.value
+                        })
                       }
+                    >
+                      <option value="builder">Builder interno</option>
+                      <option value="external">
+                        Sitio externo / importado
+                      </option>
+                    </select>
+
+                    <br />
+                    <br />
+
+                    {editForm.siteMode === "external" && (
+                      <>
+                        <input
+                          style={styles.input}
+                          value={editForm.externalSiteUrl}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              externalSiteUrl: e.target.value
+                            })
+                          }
+                          placeholder="URL del sitio externo/importado"
+                        />
+
+                        <br />
+                        <br />
+                      </>
+                    )}
+
+                    <button
+                      onClick={() => saveClientChanges(client.id)}
                       style={styles.primaryButton}
                     >
                       💾 Guardar cambios
@@ -852,28 +953,21 @@ ${getFullPublicSiteUrl(client)}`;
                 <StatusSelect client={client} />
 
                 <p>
-                  <strong>Slug:</strong>{" "}
-                  {client.slug}
+                  <strong>Slug:</strong> {client.slug}
                 </p>
 
                 <p>
-                  <strong>
-                    🌐 Sitio público:
-                  </strong>
+                  <strong>🌐 Sitio público:</strong>
                 </p>
 
                 <input
                   style={styles.linkInput}
                   readOnly
-                  value={getFullPublicSiteUrl(
-                    client
-                  )}
+                  value={getFullPublicSiteUrl(client)}
                 />
 
                 <p style={{ marginTop: "12px" }}>
-                  <strong>
-                    🔐 Panel cliente:
-                  </strong>
+                  <strong>🔐 Panel cliente:</strong>
                 </p>
 
                 <input
@@ -914,73 +1008,55 @@ ${getFullPublicSiteUrl(client)}`;
 
                 <div style={styles.actions}>
                   <a
-                    href={getFullPublicSiteUrl(
-                      client
-                    )}
+                    href={getFullPublicSiteUrl(client)}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
                       textDecoration: "none"
                     }}
                   >
-                    <button
-                      style={styles.darkButton}
-                    >
-                      🌐 Abrir sitio
-                    </button>
+                    <button style={styles.darkButton}>🌐 Abrir sitio</button>
                   </a>
 
                   <button
-                    onClick={() =>
-                      copySiteUrl(client)
-                    }
+                    onClick={() => copySiteUrl(client)}
                     style={styles.darkButton}
                   >
                     📋 Copiar web
                   </button>
 
                   <button
-                    onClick={() =>
-                      copyClientAccess(client)
-                    }
+                    onClick={() => copyClientAccess(client)}
                     style={styles.darkButton}
                   >
                     🔐 Copiar acceso
                   </button>
 
                   <button
-                    onClick={() =>
-                      openEditClient(client)
-                    }
+                    onClick={() => openEditClient(client)}
                     style={styles.darkButton}
                   >
                     👤 Editar usuario
                   </button>
 
                   <button
-                    onClick={() =>
-                      changeClientPassword(
-                        client
-                      )
-                    }
+                    onClick={() => changeClientPassword(client)}
                     style={styles.darkButton}
                   >
                     🔑 Cambiar contraseña
                   </button>
 
                   <button
-                    onClick={() =>
-                      editClientSite(client.id)
-                    }
+                    onClick={() => editClientSite(client)}
                     style={styles.darkButton}
                   >
-                    ✏️ Editar sitio
+                    {isExternalSite(client)
+                      ? "🌐 Abrir sitio externo"
+                      : "✏️ Editar sitio"}
                   </button>
 
                   <button
-                    onClick={() =>
-                      deleteClient(client.id)
-                    }
+                    onClick={() => deleteClient(client.id)}
                     style={styles.deleteButton}
                   >
                     Eliminar
@@ -997,36 +1073,25 @@ ${getFullPublicSiteUrl(client)}`;
   return (
     <div style={styles.page}>
       <aside style={styles.sidebar}>
-        <div style={styles.brand}>
-          SitiosWebDLB
-        </div>
+        <div style={styles.brand}>SitiosWebDLB</div>
 
-        <p style={styles.sidebarText}>
-          Panel administrativo
-        </p>
+        <p style={styles.sidebarText}>Panel administrativo</p>
 
         <button
           style={sidebarStyle("dashboard")}
-          onClick={() =>
-            setActiveSection("dashboard")
-          }
+          onClick={() => setActiveSection("dashboard")}
         >
           📊 Dashboard
         </button>
 
         <button
           style={sidebarStyle("clients")}
-          onClick={() =>
-            setActiveSection("clients")
-          }
+          onClick={() => setActiveSection("clients")}
         >
           👥 Clientes
         </button>
 
-        <button
-          onClick={logout}
-          style={styles.sidebarButton}
-        >
+        <button onClick={logout} style={styles.sidebarButton}>
           Cerrar sesión
         </button>
       </aside>
@@ -1034,14 +1099,9 @@ ${getFullPublicSiteUrl(client)}`;
       <main style={styles.main}>
         <div style={styles.header}>
           <div>
-            <h1 style={styles.title}>
-              Panel Admin
-            </h1>
+            <h1 style={styles.title}>Panel Admin</h1>
 
-            <p style={styles.subtitle}>
-              Administra clientes y sitios
-              web.
-            </p>
+            <p style={styles.subtitle}>Administra clientes y sitios web.</p>
           </div>
 
           <button
@@ -1056,11 +1116,9 @@ ${getFullPublicSiteUrl(client)}`;
           </button>
         </div>
 
-        {activeSection === "dashboard" &&
-          renderDashboard()}
+        {activeSection === "dashboard" && renderDashboard()}
 
-        {activeSection === "clients" &&
-          renderClients()}
+        {activeSection === "clients" && renderClients()}
       </main>
     </div>
   );
