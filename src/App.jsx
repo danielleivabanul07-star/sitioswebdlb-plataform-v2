@@ -201,15 +201,11 @@ function BuilderHome() {
           onExportZip={handleExportZip}
         />
 
-        <Preview
-          key={
-            project?.updatedAt ||
-            JSON.stringify(project?.design || {})
-          }
-          project={project}
-          setProject={setProject}
-          visiblePages={visiblePages}
-        />
+      <Preview
+  project={project}
+  setProject={setProject}
+  visiblePages={visiblePages}
+/>
       </main>
     </div>
   );
