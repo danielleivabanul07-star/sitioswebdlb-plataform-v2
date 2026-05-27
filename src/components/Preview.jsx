@@ -57,6 +57,12 @@ export function Preview({ project, setProject, visiblePages = [] }) {
     if (page) setActivePageKey(key);
   }
 
+  function getMapUrl(address) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      address || ""
+    )}`;
+  }
+
   return (
     <section className="previewWrap">
       <div className="previewTop">
@@ -141,6 +147,7 @@ export function Preview({ project, setProject, visiblePages = [] }) {
           setProject={setProject}
           backgroundMode={backgroundMode}
           overlay={overlay}
+          getMapUrl={getMapUrl}
         />
 
         <DraggableElement
@@ -180,7 +187,14 @@ export function Preview({ project, setProject, visiblePages = [] }) {
   );
 }
 
-function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
+function PreviewPage({
+  page,
+  project,
+  setProject,
+  backgroundMode,
+  overlay,
+  getMapUrl
+}) {
   const business = project?.business || {};
   const services = project?.services || [];
   const gallery = project?.gallery || [];
@@ -567,7 +581,23 @@ function PreviewPage({ page, project, setProject, backgroundMode, overlay }) {
         >
           <div className="storyCard" style={cardStyle}>
             <p>
-              <strong>Dirección:</strong> {business.address}
+              <strong>Dirección:</strong>{" "}
+              {business.address ? (
+                <a
+                  href={getMapUrl(business.address)}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    color: design.accent || "#facc15",
+                    textDecoration: "underline",
+                    fontWeight: "700"
+                  }}
+                >
+                  {business.address}
+                </a>
+              ) : (
+                "Sin dirección"
+              )}
             </p>
           </div>
         </DraggableElement>
