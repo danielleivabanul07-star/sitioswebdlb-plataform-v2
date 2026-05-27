@@ -1,9 +1,28 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 export default function ImportedSite() {
   const { clientId } = useParams();
 
-  const siteUrl = `https://sitioswebdlb-api.onrender.com/imported-sites/${clientId}/index.html`;
+  const [html, setHtml] = useState("");
+
+  useEffect(() => {
+    async function loadSite() {
+      try {
+        const response = await fetch(
+          `https://xkehxgpzolkhjmjjscxr.supabase.co/storage/v1/object/public/imported-sites/${clientId}/index.html`
+        );
+
+        const text = await response.text();
+
+        setHtml(text);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    loadSite();
+  }, [clientId]);
 
   return (
     <div
@@ -14,8 +33,8 @@ export default function ImportedSite() {
       }}
     >
       <iframe
-        src={siteUrl}
         title="Imported Site"
+        srcDoc={html}
         style={{
           width: "100%",
           height: "100%",
