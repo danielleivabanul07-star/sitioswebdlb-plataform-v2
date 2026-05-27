@@ -98,24 +98,23 @@ export function Preview({ project, setProject, visiblePages = [] }) {
             </div>
           </DraggableElement>
 
-          <DraggableElement
-            id="headerNav"
-            project={project}
-            setProject={setProject}
-            style={{ display: "block" }}
+          <div
+            className="siteNav"
+            style={{
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              flexWrap: "wrap"
+            }}
           >
-            <div
-              className="siteNav"
-              style={{
-                display: "flex",
-                gap: "10px",
-                alignItems: "center",
-                flexWrap: "wrap"
-              }}
-            >
-              {safeVisiblePages.map((page) => (
+            {safeVisiblePages.map((page, index) => (
+              <DraggableElement
+                key={page.key}
+                id={`navButton-${index}`}
+                project={project}
+                setProject={setProject}
+              >
                 <button
-                  key={page.key}
                   type="button"
                   onClick={() => goToPage(page.key)}
                   style={{
@@ -123,10 +122,12 @@ export function Preview({ project, setProject, visiblePages = [] }) {
                       page.key === activePageKey
                         ? design.accent || "#facc15"
                         : "transparent",
+
                     color:
                       page.key === activePageKey
                         ? "#000"
                         : design.textColor || "#ffffff",
+
                     border: "none",
                     cursor: "pointer",
                     padding: "8px 12px",
@@ -137,9 +138,9 @@ export function Preview({ project, setProject, visiblePages = [] }) {
                 >
                   {page.label}
                 </button>
-              ))}
-            </div>
-          </DraggableElement>
+              </DraggableElement>
+            ))}
+          </div>
         </div>
 
         <PreviewPage

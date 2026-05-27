@@ -28,17 +28,25 @@ export function DraggableElement({
   function startDrag(e) {
     if (!setProject || disabled) return;
 
-    e.preventDefault();
-    e.stopPropagation();
-
     const isTouch = e.type === "touchstart";
     const startX = isTouch ? e.touches[0].clientX : e.clientX;
     const startY = isTouch ? e.touches[0].clientY : e.clientY;
+
+    let hasMoved = false;
 
     const startPosition = {
       x: current.x || 0,
       y: current.y || 0
     };
+
+    function blockNextClick(clickEvent) {
+      if (hasMoved) {
+        clickEvent.preventDefault();
+        clickEvent.stopPropagation();
+      }
+
+      window.removeEventListener("click", blockNextClick, true);
+    }
 
     function onMove(moveEvent) {
       const moveX = moveEvent.touches
@@ -49,8 +57,20 @@ export function DraggableElement({
         ? moveEvent.touches[0].clientY
         : moveEvent.clientY;
 
-      const nextX = startPosition.x + (moveX - startX);
-      const nextY = startPosition.y + (moveY - startY);
+      const deltaX = moveX - startX;
+      const deltaY = moveY - startY;
+
+      if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+        hasMoved = true;
+      }
+
+      if (!hasMoved) return;
+
+      moveEvent.preventDefault();
+      moveEvent.stopPropagation();
+
+      const nextX = startPosition.x + deltaX;
+      const nextY = startPosition.y + deltaY;
 
       savePosition(nextX, nextY);
     }
@@ -60,6 +80,10 @@ export function DraggableElement({
       window.removeEventListener("mouseup", onEnd);
       window.removeEventListener("touchmove", onMove);
       window.removeEventListener("touchend", onEnd);
+
+      if (hasMoved) {
+        window.addEventListener("click", blockNextClick, true);
+      }
     }
 
     window.addEventListener("mousemove", onMove);
