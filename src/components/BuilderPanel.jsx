@@ -6,7 +6,7 @@ import { GalleryEditor } from "./GalleryEditor.jsx";
 import { FormBuilder } from "./FormBuilder.jsx";
 import { AITools } from "./AITools.jsx";
 
-const supabaseUrl = "https://xkehxgpzolkhjmjjsccxr.supabase.co";
+const supabaseUrl = "https://xkehxgpzolkhjmjjscxr.supabase.co";
 const supabaseKey = "sb_publishable_P1VuCqfYNf6uhlZsazicpA_x8w7Rdcc";
 const supabaseStorage = createClient(supabaseUrl, supabaseKey);
 
