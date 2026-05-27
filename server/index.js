@@ -12,7 +12,6 @@ import clientRoutes from "./routes/client.routes.js";
 import projectRoutes from "./routes/projects.routes.js";
 import plansRoutes from "./routes/plans.routes.js";
 import importSiteRoutes from "./routes/importSite.js";
-import path from "path";
 const app = express();
 
 app.use(cors());
