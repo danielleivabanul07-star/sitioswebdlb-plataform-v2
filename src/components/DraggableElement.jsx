@@ -35,14 +35,19 @@ export function DraggableElement({
   function savePosition(x, y) {
     if (!setProject || disabled || isLocked) return;
 
+    const roundedX = Math.round(x);
+    const roundedY = Math.round(y);
+
     setProject((prev) => ({
       ...prev,
-      updatedAt: Date.now(),
       design: {
         ...prev.design,
         positions: {
           ...(prev.design?.positions || {}),
-          [id]: { x, y }
+          [id]: {
+            x: roundedX,
+            y: roundedY
+          }
         }
       }
     }));
@@ -101,6 +106,7 @@ export function DraggableElement({
     };
 
     let moved = false;
+    let frameId = null;
 
     function onMove(moveEvent) {
       const moveX = moveEvent.touches
@@ -122,7 +128,16 @@ export function DraggableElement({
         moveEvent.preventDefault();
         moveEvent.stopPropagation();
 
-        savePosition(startPosition.x + deltaX, startPosition.y + deltaY);
+        if (frameId) {
+          cancelAnimationFrame(frameId);
+        }
+
+        frameId = requestAnimationFrame(() => {
+          savePosition(
+            startPosition.x + deltaX,
+            startPosition.y + deltaY
+          );
+        });
       }
     }
 
@@ -131,6 +146,10 @@ export function DraggableElement({
       window.removeEventListener("mouseup", onEnd, true);
       window.removeEventListener("touchmove", onMove, true);
       window.removeEventListener("touchend", onEnd, true);
+
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
 
       if (moved) {
         const blockClick = (clickEvent) => {
