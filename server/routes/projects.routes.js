@@ -10,6 +10,41 @@ import {
 
 const router = express.Router();
 
+function isBase64Image(value) {
+  return typeof value === "string" && value.startsWith("data:image");
+}
+
+function removeBase64Images(project) {
+  const clean = JSON.parse(JSON.stringify(project || {}));
+
+  if (isBase64Image(clean.design?.globalBackground)) {
+    clean.design.globalBackground = "";
+    clean.design.globalBackgroundName = "";
+  }
+
+  if (isBase64Image(clean.design?.heroBackground)) {
+    clean.design.heroBackground = "";
+    clean.design.heroBackgroundName = "";
+  }
+
+  if (Array.isArray(clean.pages)) {
+    clean.pages = clean.pages.map((page) => ({
+      ...page,
+      background: isBase64Image(page.background) ? "" : page.background,
+      backgroundName: isBase64Image(page.background) ? "" : page.backgroundName
+    }));
+  }
+
+  if (Array.isArray(clean.gallery)) {
+    clean.gallery = clean.gallery.map((img) => ({
+      ...img,
+      src: isBase64Image(img.src) ? "" : img.src
+    }));
+  }
+
+  return clean;
+}
+
 async function findClientByIdOrSlug(value) {
   const { data, error } = await supabase
     .from("users")
@@ -80,7 +115,7 @@ async function getOrCreateProject(clientId) {
 }
 
 function normalizeProject(clientId, current, incoming) {
-  return {
+  const mergedProject = {
     ...current,
     ...incoming,
     clientId: String(clientId),
@@ -114,14 +149,16 @@ function normalizeProject(clientId, current, incoming) {
 
     updatedAt: new Date().toISOString()
   };
+
+  return removeBase64Images(mergedProject);
 }
 
 async function saveProject(clientId, projectData) {
-  const cleanProject = {
+  const cleanProject = removeBase64Images({
     ...projectData,
     clientId: String(clientId),
     updatedAt: new Date().toISOString()
-  };
+  });
 
   const { error } = await supabase
     .from("projects")
