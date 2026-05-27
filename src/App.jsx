@@ -20,7 +20,8 @@ import Login from "./pages/Login.jsx";
 import AdminPanel from "./pages/AdminPanel.jsx";
 import ClientPanel from "./pages/ClientPanel.jsx";
 import PublicSite from "./pages/PublicSite.jsx";
-
+import ImportedSite from "./pages/ImportedSite.jsx";
+import ImportedEditor from "./pages/ImportedEditor.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function BuilderHome() {
@@ -265,6 +266,21 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/imported-site/:clientId"
+  element={<ImportedSite />}
+/>
+
+<Route
+  path="/imported-editor/:clientId"
+  element={
+    <ProtectedRoute
+      allowedRoles={["admin"]}
+    >
+      <ImportedEditor />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );

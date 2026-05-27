@@ -4,6 +4,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
+import path from "path";
 
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -11,9 +12,17 @@ import clientRoutes from "./routes/client.routes.js";
 import projectRoutes from "./routes/projects.routes.js";
 import plansRoutes from "./routes/plans.routes.js";
 import importSiteRoutes from "./routes/importSite.js";
+
 const app = express();
 
 app.use(cors());
+
+app.use(
+  "/imported-sites",
+  express.static(
+    path.join(process.cwd(), "uploads", "client-sites")
+  )
+);
 
 app.use(
   express.json({
@@ -40,6 +49,7 @@ app.use("/api/client", clientRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/plans", plansRoutes);
 app.use("/api/admin", importSiteRoutes);
+
 // IA COPY
 app.post("/api/ai-copy", async (req, res) => {
   try {
