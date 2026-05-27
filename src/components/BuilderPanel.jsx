@@ -1,9 +1,14 @@
 import { Download, Save, Upload } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
 import { PagesEditor } from "./PagesEditor.jsx";
 import { ServicesEditor } from "./ServicesEditor.jsx";
 import { GalleryEditor } from "./GalleryEditor.jsx";
 import { FormBuilder } from "./FormBuilder.jsx";
 import { AITools } from "./AITools.jsx";
+
+const supabaseUrl = "https://xkehxgpzolkhjmjjsccxr.supabase.co";
+const supabaseKey = "sb_publishable_P1VuCqfYNf6uhlZsazicpA_x8w7Rdcc";
+const supabaseStorage = createClient(supabaseUrl, supabaseKey);
 
 export function BuilderPanel({
   project,
@@ -28,24 +33,52 @@ export function BuilderPanel({
     }));
   }
 
-  function handleHeroBackground(file) {
+  async function uploadImage(file, folder = "backgrounds") {
+    if (!file) return "";
+
+    const safeName = file.name
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9.-]/g, "");
+
+    const filePath = `${folder}/${Date.now()}-${safeName}`;
+
+    const { error } = await supabaseStorage.storage
+      .from("site-backgrounds")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: true
+      });
+
+    if (error) {
+      console.error("Error subiendo imagen:", error);
+      alert("Error subiendo imagen a Supabase Storage");
+      return "";
+    }
+
+    const { data } = supabaseStorage.storage
+      .from("site-backgrounds")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  }
+
+  async function handleHeroBackground(file) {
     if (!file) return;
 
-    const reader = new FileReader();
+    const imageUrl = await uploadImage(file, "hero");
 
-    reader.onload = () => {
-      setProject((prev) => ({
-        ...prev,
-        updatedAt: Date.now(),
-        design: {
-          ...prev.design,
-          heroBackground: reader.result,
-          heroBackgroundName: file.name || "fondo-hero.jpg"
-        }
-      }));
-    };
+    if (!imageUrl) return;
 
-    reader.readAsDataURL(file);
+    setProject((prev) => ({
+      ...prev,
+      updatedAt: Date.now(),
+      design: {
+        ...prev.design,
+        heroBackground: imageUrl,
+        heroBackgroundName: file.name || "fondo-hero.jpg"
+      }
+    }));
   }
 
   function removeHeroBackground() {
@@ -60,25 +93,23 @@ export function BuilderPanel({
     }));
   }
 
-  function handleGlobalBackground(file) {
+  async function handleGlobalBackground(file) {
     if (!file) return;
 
-    const reader = new FileReader();
+    const imageUrl = await uploadImage(file, "global");
 
-    reader.onload = () => {
-      setProject((prev) => ({
-        ...prev,
-        updatedAt: Date.now(),
-        design: {
-          ...prev.design,
-          globalBackground: reader.result,
-          globalBackgroundName: file.name || "fondo-global.jpg",
-          backgroundMode: "global"
-        }
-      }));
-    };
+    if (!imageUrl) return;
 
-    reader.readAsDataURL(file);
+    setProject((prev) => ({
+      ...prev,
+      updatedAt: Date.now(),
+      design: {
+        ...prev.design,
+        globalBackground: imageUrl,
+        globalBackgroundName: file.name || "fondo-global.jpg",
+        backgroundMode: "global"
+      }
+    }));
   }
 
   function removeGlobalBackground() {
@@ -93,34 +124,32 @@ export function BuilderPanel({
     }));
   }
 
-  function handlePageBackground(index, file) {
+  async function handlePageBackground(index, file) {
     if (!file) return;
 
-    const reader = new FileReader();
+    const imageUrl = await uploadImage(file, "pages");
 
-    reader.onload = () => {
-      setProject((prev) => {
-        const updatedPages = [...prev.pages];
+    if (!imageUrl) return;
 
-        updatedPages[index] = {
-          ...updatedPages[index],
-          background: reader.result,
-          backgroundName: file.name || "fondo-pagina.jpg"
-        };
+    setProject((prev) => {
+      const updatedPages = [...prev.pages];
 
-        return {
-          ...prev,
-          updatedAt: Date.now(),
-          pages: updatedPages,
-          design: {
-            ...prev.design,
-            backgroundMode: "perPage"
-          }
-        };
-      });
-    };
+      updatedPages[index] = {
+        ...updatedPages[index],
+        background: imageUrl,
+        backgroundName: file.name || "fondo-pagina.jpg"
+      };
 
-    reader.readAsDataURL(file);
+      return {
+        ...prev,
+        updatedAt: Date.now(),
+        pages: updatedPages,
+        design: {
+          ...prev.design,
+          backgroundMode: "perPage"
+        }
+      };
+    });
   }
 
   function removePageBackground(index) {
