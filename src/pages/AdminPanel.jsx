@@ -14,6 +14,7 @@ export default function AdminPanel() {
   const [loadingRefresh, setLoadingRefresh] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [importingClientId, setImportingClientId] = useState(null);
 
   const [editingClient, setEditingClient] = useState(null);
 
@@ -176,6 +177,36 @@ export default function AdminPanel() {
     } catch (error) {
       console.log(error);
       alert("Error creando cliente");
+    }
+  }
+
+  async function importZipForClient(client, file) {
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".zip")) {
+      alert("Debes subir un archivo .zip");
+      return;
+    }
+
+    try {
+      setImportingClientId(client.id);
+
+      const formData = new FormData();
+      formData.append("zipFile", file);
+      formData.append("clientId", client.id);
+
+      const res = await api.post("/admin/import-site", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      alert(res.data?.message || "Sitio importado correctamente 🔥");
+    } catch (error) {
+      console.log(error);
+      alert("Error importando ZIP");
+    } finally {
+      setImportingClientId(null);
     }
   }
 
@@ -564,7 +595,9 @@ ${getFullPublicSiteUrl(client)}`;
       background: "#1e293b",
       color: "#e5e7eb",
       fontWeight: "700",
-      cursor: "pointer"
+      cursor: "pointer",
+      textAlign: "center",
+      boxSizing: "border-box"
     },
 
     deleteButton: {
@@ -1054,6 +1087,22 @@ ${getFullPublicSiteUrl(client)}`;
                       ? "🌐 Abrir sitio externo"
                       : "✏️ Editar sitio"}
                   </button>
+
+                  <label style={styles.darkButton}>
+                    {importingClientId === client.id
+                      ? "Importando ZIP..."
+                      : "📦 Importar ZIP"}
+
+                    <input
+                      type="file"
+                      accept=".zip"
+                      hidden
+                      disabled={importingClientId === client.id}
+                      onChange={(e) =>
+                        importZipForClient(client, e.target.files[0])
+                      }
+                    />
+                  </label>
 
                   <button
                     onClick={() => deleteClient(client.id)}
