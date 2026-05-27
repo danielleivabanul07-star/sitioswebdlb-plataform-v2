@@ -28,25 +28,20 @@ export function DraggableElement({
   function startDrag(e) {
     if (!setProject || disabled) return;
 
+    e.preventDefault();
+    e.stopPropagation();
+
     const isTouch = e.type === "touchstart";
+
     const startX = isTouch ? e.touches[0].clientX : e.clientX;
     const startY = isTouch ? e.touches[0].clientY : e.clientY;
-
-    let hasMoved = false;
 
     const startPosition = {
       x: current.x || 0,
       y: current.y || 0
     };
 
-    function blockNextClick(clickEvent) {
-      if (hasMoved) {
-        clickEvent.preventDefault();
-        clickEvent.stopPropagation();
-      }
-
-      window.removeEventListener("click", blockNextClick, true);
-    }
+    let moved = false;
 
     function onMove(moveEvent) {
       const moveX = moveEvent.touches
@@ -60,42 +55,51 @@ export function DraggableElement({
       const deltaX = moveX - startX;
       const deltaY = moveY - startY;
 
-      if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
-        hasMoved = true;
+      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+        moved = true;
       }
 
-      if (!hasMoved) return;
+      if (moved) {
+        moveEvent.preventDefault();
+        moveEvent.stopPropagation();
 
-      moveEvent.preventDefault();
-      moveEvent.stopPropagation();
-
-      const nextX = startPosition.x + deltaX;
-      const nextY = startPosition.y + deltaY;
-
-      savePosition(nextX, nextY);
-    }
-
-    function onEnd() {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onEnd);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onEnd);
-
-      if (hasMoved) {
-        window.addEventListener("click", blockNextClick, true);
+        savePosition(startPosition.x + deltaX, startPosition.y + deltaY);
       }
     }
 
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onEnd);
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", onEnd);
+    function onEnd(endEvent) {
+      window.removeEventListener("mousemove", onMove, true);
+      window.removeEventListener("mouseup", onEnd, true);
+      window.removeEventListener("touchmove", onMove, true);
+      window.removeEventListener("touchend", onEnd, true);
+
+      if (moved) {
+        const blockClick = (clickEvent) => {
+          clickEvent.preventDefault();
+          clickEvent.stopPropagation();
+          clickEvent.stopImmediatePropagation();
+          window.removeEventListener("click", blockClick, true);
+        };
+
+        window.addEventListener("click", blockClick, true);
+      }
+
+      if (endEvent) {
+        endEvent.preventDefault?.();
+        endEvent.stopPropagation?.();
+      }
+    }
+
+    window.addEventListener("mousemove", onMove, true);
+    window.addEventListener("mouseup", onEnd, true);
+    window.addEventListener("touchmove", onMove, { passive: false, capture: true });
+    window.addEventListener("touchend", onEnd, true);
   }
 
   return (
     <div
-      onMouseDown={startDrag}
-      onTouchStart={startDrag}
+      onMouseDownCapture={startDrag}
+      onTouchStartCapture={startDrag}
       draggable={false}
       style={{
         transform: `translate(${current.x || 0}px, ${current.y || 0}px)`,
@@ -105,7 +109,7 @@ export function DraggableElement({
         touchAction: "none",
         display: "inline-block",
         position: "relative",
-        zIndex: 20,
+        zIndex: 999,
         ...style
       }}
     >
