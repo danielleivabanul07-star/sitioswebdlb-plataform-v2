@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { Preview } from "../components/Preview.jsx";
 import { defaultProject } from "../utils/defaultProject.js";
-import { supabase } from "../configuraciones/db";
+import { supabase } from "../config/db";
 export default function ClientPanel() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "null");
