@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { Preview } from "../components/Preview.jsx";
 import { defaultProject } from "../utils/defaultProject.js";
-
+import { supabase } from "../configuracion/supabase";
 export default function ClientPanel() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -139,30 +139,54 @@ export default function ClientPanel() {
     });
   }
 
-  async function handlePhotoUpload(e) {
-    const files = Array.from(e.target.files || []);
+async function handlePhotoUpload(e) {
+  const files = Array.from(e.target.files || []);
 
-    const newPhotos = await Promise.all(
-      files.map((file) => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
+  const uploadedPhotos = [];
 
-          reader.onload = () => {
-            resolve({
-              id: crypto.randomUUID(),
-              name: file.name,
-              url: reader.result
-            });
-          };
+  for (const file of files) {
+    try {
+      const safeName = file.name.replace(
+        /[^a-zA-Z0-9.-]/g,
+        "-"
+      );
 
-          reader.readAsDataURL(file);
+      const fileName =
+        `${user.id}/${Date.now()}-${safeName}`;
+
+      const { error } = await supabase.storage
+        .from("site-backgrounds")
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: true
         });
-      })
-    );
 
-    setPhotos((prev) => [...prev, ...newPhotos]);
-    e.target.value = "";
+      if (error) {
+        console.error(error);
+        continue;
+      }
+
+      const { data } = supabase.storage
+        .from("site-backgrounds")
+        .getPublicUrl(fileName);
+
+      uploadedPhotos.push({
+        id: crypto.randomUUID(),
+        name: file.name,
+        url: data.publicUrl
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }
+
+  setPhotos((prev) => [
+    ...prev,
+    ...uploadedPhotos
+  ]);
+
+  e.target.value = "";
+}
 
   function deletePhoto(id) {
     setPhotos((prev) => prev.filter((photo) => photo.id !== id));
