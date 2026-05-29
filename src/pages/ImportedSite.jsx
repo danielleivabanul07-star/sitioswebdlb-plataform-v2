@@ -6,6 +6,7 @@ export default function ImportedSite() {
   const { clientId } = useParams();
 
   const [html, setHtml] = useState("");
+  const [currentPage, setCurrentPage] = useState("index.html");
 
   function buildGallery(gallery = []) {
     if (!Array.isArray(gallery) || gallery.length === 0) {
@@ -92,6 +93,43 @@ export default function ImportedSite() {
     return text.replace("</head>", `${dynamicStyles}</head>`);
   }
 
+  function injectNavigationScript(text) {
+    const script = `
+      <script>
+        document.addEventListener("click", function(e) {
+          const link = e.target.closest("a");
+
+          if (!link) return;
+
+          const href = link.getAttribute("href");
+
+          if (!href) return;
+
+          if (
+            href.startsWith("http") ||
+            href.startsWith("mailto:") ||
+            href.startsWith("tel:") ||
+            href.startsWith("https://wa.me") ||
+            href.startsWith("#")
+          ) {
+            return;
+          }
+
+          if (href.endsWith(".html")) {
+            e.preventDefault();
+
+            window.parent.postMessage({
+              type: "CHANGE_IMPORTED_PAGE",
+              page: href
+            }, "*");
+          }
+        });
+      </script>
+    `;
+
+    return text.replace("</body>", `${script}</body>`);
+  }
+
   useEffect(() => {
     async function loadSite() {
       try {
@@ -104,13 +142,14 @@ export default function ImportedSite() {
         const baseUrl =
           `https://xkehxgpzolkhjmjjscxr.supabase.co/storage/v1/object/public/imported-sites/${clientId}/`;
 
-        const response = await fetch(`${baseUrl}index.html`);
+        const response = await fetch(`${baseUrl}${currentPage}`);
 
         let text = await response.text();
 
         text = text.replace("<head>", `<head><base href="${baseUrl}">`);
 
         text = injectDynamicStyles(text);
+        text = injectNavigationScript(text);
 
         text = text.replaceAll("{{business.name}}", business.name || "");
         text = text.replaceAll("{{business.phone}}", business.phone || "");
@@ -132,7 +171,19 @@ export default function ImportedSite() {
     }
 
     loadSite();
-  }, [clientId]);
+  }, [clientId, currentPage]);
+
+  useEffect(() => {
+    function handleMessage(event) {
+      if (event.data?.type === "CHANGE_IMPORTED_PAGE") {
+        setCurrentPage(event.data.page);
+      }
+    }
+
+    window.addEventListener("message", handleMessage);
+
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   return (
     <div
