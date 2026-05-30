@@ -236,26 +236,42 @@ export function BuilderPanel({
       <section className="panelSection">
         <h3>Datos del negocio</h3>
 
-        <div className="grid2">
-          <Field
-            label="Nombre"
-            value={business.name}
-            onChange={(v) => updateBusiness("name", v)}
-          />
+       <div className="grid2">
+  <Field
+    label="Nombre"
+    value={business.name}
+    onChange={(v) => updateBusiness("name", v)}
+  />
 
-          <Field
-            label="Tipo"
-            value={business.type}
-            onChange={(v) => updateBusiness("type", v)}
-          />
-        </div>
+  <Field
+    label="Nombre Logo"
+    value={business.logoName}
+    onChange={(v) => updateBusiness("logoName", v)}
+  />
+
+  <Field
+    label="Tipo"
+    value={business.type}
+    onChange={(v) => updateBusiness("type", v)}
+  />
+
+  <Field
+    label="Título Principal"
+    value={business.heroTitle}
+    onChange={(v) => updateBusiness("heroTitle", v)}
+  />
+</div>
 
         <Field
           label="Mensaje principal"
           value={business.hero}
           onChange={(v) => updateBusiness("hero", v)}
         />
-
+<Field
+  label="Slogan"
+  value={business.slogan}
+  onChange={(v) => updateBusiness("slogan", v)}
+/>
         <TextArea
           label="Sobre Nosotros"
           value={business.about}
@@ -267,7 +283,17 @@ export function BuilderPanel({
           value={business.why}
           onChange={(v) => updateBusiness("why", v)}
         />
+<TextArea
+  label="Misión"
+  value={business.mission}
+  onChange={(v) => updateBusiness("mission", v)}
+/>
 
+<TextArea
+  label="Visión"
+  value={business.vision}
+  onChange={(v) => updateBusiness("vision", v)}
+/>
         <div className="grid2">
           <Field
             label="Teléfono / WhatsApp"

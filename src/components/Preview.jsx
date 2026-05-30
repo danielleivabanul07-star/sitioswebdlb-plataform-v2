@@ -94,7 +94,7 @@ export function Preview({ project, setProject, visiblePages = [] }) {
               className="siteLogo"
               style={{ color: design.titleColor || design.accent || "#facc15" }}
             >
-              {business.name || "Nombre del negocio"}
+            {business.logoName || business.name || "Nombre del negocio"}
             </div>
           </DraggableElement>
 
@@ -275,14 +275,32 @@ function PreviewPage({
         <section className="siteHero" style={heroBgStyle}>
           <div>
             <DraggableElement id="heroTitle" project={project} setProject={setProject}>
-              <h1 style={{ color: design.titleColor || "#facc15" }}>
-                {business.name}
-              </h1>
+             <h1 style={{ color: design.titleColor || "#facc15" }}>
+  {business.heroTitle || business.name}
+</h1>
             </DraggableElement>
 
-            <DraggableElement id="heroText" project={project} setProject={setProject}>
-              <p>{business.hero}</p>
-            </DraggableElement>
+           <DraggableElement id="heroText" project={project} setProject={setProject}>
+  <p>{business.hero}</p>
+</DraggableElement>
+
+{business.slogan && (
+  <DraggableElement
+    id="heroSlogan"
+    project={project}
+    setProject={setProject}
+  >
+    <p
+      style={{
+        fontSize: "20px",
+        fontWeight: "600",
+        marginTop: "10px"
+      }}
+    >
+      {business.slogan}
+    </p>
+  </DraggableElement>
+)}
           </div>
         </section>
 
@@ -304,7 +322,39 @@ function PreviewPage({
             </div>
           </DraggableElement>
         </section>
+<section className="siteSection" style={pageBgStyle}>
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+      gap: "20px"
+    }}
+  >
+    <div className="storyCard" style={cardStyle}>
+      <h2
+        style={{
+          color: design.titleColor || "#facc15"
+        }}
+      >
+        Misión
+      </h2>
 
+      <p>{business.mission}</p>
+    </div>
+
+    <div className="storyCard" style={cardStyle}>
+      <h2
+        style={{
+          color: design.titleColor || "#facc15"
+        }}
+      >
+        Visión
+      </h2>
+
+      <p>{business.vision}</p>
+    </div>
+  </div>
+</section>
         <section className="siteSection" style={pageBgStyle}>
           <DraggableElement id="whyTitle" project={project} setProject={setProject}>
             <h2 style={{ color: design.titleColor || "#facc15" }}>

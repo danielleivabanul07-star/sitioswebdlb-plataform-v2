@@ -7,12 +7,29 @@ export const fixedCredit = {
 export const defaultProject = {
   business: {
     name: "Nombre del Negocio",
+
+    logoName: "Nombre del Negocio",
+
+    heroTitle: "Servicio profesional para clientes exigentes",
+
+    slogan: "Tu mensaje principal aquí",
+
+    mission:
+      "Nuestra misión es brindar un servicio profesional, confiable y de alta calidad que ayude a nuestros clientes a crecer.",
+
+    vision:
+      "Nuestra visión es convertirnos en una referencia dentro de nuestra industria mediante la innovación y la excelencia.",
+
     type: "Negocio local",
+
     hero: "Servicio profesional para clientes exigentes",
+
     about:
       "Ofrecemos calidad, confianza y atención personalizada para cada cliente.",
+
     why:
       "Elegirnos significa trabajar con calidad, confianza y compromiso para que cada cliente reciba una experiencia profesional.",
+
     phone: "16892220829",
     email: "negocio@gmail.com",
     address: "Louisville, KY",
