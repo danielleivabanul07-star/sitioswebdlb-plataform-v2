@@ -198,6 +198,7 @@ function PreviewPage({
   const business = project?.business || {};
   const services = project?.services || [];
   const gallery = project?.gallery || [];
+  const sections = project?.sections || [];
   const forms = project?.forms || {
     appointments: [],
     financing: []
@@ -270,6 +271,17 @@ function PreviewPage({
   };
 
   if (page.key === "home") {
+   const pageSections = sections
+  .filter(
+    (section) =>
+      section.page === page.key &&
+      section.show
+  )
+  .sort(
+    (a, b) =>
+      (a.order || 0) -
+      (b.order || 0)
+  );
     return (
       <>
         <section className="siteHero" style={heroBgStyle}>
@@ -373,6 +385,38 @@ function PreviewPage({
             </div>
           </DraggableElement>
         </section>
+        {pageSections.map((section) => {
+  if (section.type === "text-card") {
+    return (
+      <section
+        key={section.id}
+        className="siteSection"
+        style={pageBgStyle}
+      >
+        <DraggableElement
+          id={`customSection-${section.id}`}
+          project={project}
+          setProject={setProject}
+          style={{ display: "block" }}
+        >
+          <div className="storyCard" style={cardStyle}>
+            <h2
+              style={{
+                color: design.titleColor || "#facc15"
+              }}
+            >
+              {section.title}
+            </h2>
+
+            <p>{section.text}</p>
+          </div>
+        </DraggableElement>
+      </section>
+    );
+  }
+
+  return null;
+})}
       </>
     );
   }

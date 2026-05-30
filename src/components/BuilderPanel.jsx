@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { PagesEditor } from "./PagesEditor.jsx";
 import { ServicesEditor } from "./ServicesEditor.jsx";
 import { GalleryEditor } from "./GalleryEditor.jsx";
+import { SectionsEditor } from "./SectionsEditor.jsx";
 import { FormBuilder } from "./FormBuilder.jsx";
 import { AITools } from "./AITools.jsx";
 
@@ -628,7 +629,9 @@ export function BuilderPanel({
       <ServicesEditor project={project} setProject={setProject} />
 
       <GalleryEditor project={project} setProject={setProject} />
-
+      
+      <SectionsEditor project={project} setProject={setProject} />
+      
       <FormBuilder
         title="Formulario de citas"
         kind="appointments"

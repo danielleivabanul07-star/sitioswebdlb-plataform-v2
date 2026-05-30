@@ -180,7 +180,28 @@ export const defaultProject = {
   ],
 
   gallery: [],
-
+sections: [
+  {
+    id: "mission",
+    page: "home",
+    type: "text-card",
+    title: "Misión",
+    text:
+      "Nuestra misión es brindar un servicio profesional, confiable y de alta calidad para ayudar a nuestros clientes a crecer.",
+    show: true,
+    order: 1
+  },
+  {
+    id: "vision",
+    page: "home",
+    type: "text-card",
+    title: "Visión",
+    text:
+      "Nuestra visión es convertirnos en una referencia dentro de nuestra industria mediante la innovación y la excelencia.",
+    show: true,
+    order: 2
+  }
+],
   forms: {
     appointments: [
       {
